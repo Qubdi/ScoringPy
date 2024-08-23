@@ -5,17 +5,13 @@ import seaborn as sns
 
 
 class CustomDataFrameWrapper:
-    def __init__(self, df, plot_func, safety_func):
+    def __init__(self, df, plot_func):
         self.df = df
         self.plot_func = plot_func
-        self.safety_func = safety_func
+
 
     def plot(self, *args, **kwargs):
         self.plot_func(*args, **kwargs)
-        return self  # Return the wrapper object itself for chaining
-
-    def safety(self, *args, **kwargs):
-        self.safety_func(*args, **kwargs)
         return self  # Return the wrapper object itself for chaining
 
     def __getattr__(self, name):
@@ -59,6 +55,8 @@ class WoeAnalysis:
         if df[column].dtype == 'object' and len(df[column].value_counts()) >= threshold:
             raise ValueError(
                 f"Column '{column}' has {len(df[column].value_counts())} unique values, which exceeds the limit of {threshold}.")
+
+
 
 
     def __discrete_dummies(self,df, column):
@@ -186,7 +184,7 @@ class WoeAnalysis:
         # plt.show()
 
 
-    def discrete(self, column, df, target):
+    def discrete(self, column, df, target, safety = True, threshold = 300):
         """
         Determining discrete features' distributions
 
@@ -198,16 +196,8 @@ class WoeAnalysis:
         df_temp = df.copy()
 
         # Define a safety method to check for high cardinality in the specified column
-        def safety(threshold=300, off=False):
-            if not off:
-               self.__safety_check(df=df_temp, column=column, threshold=threshold)
-            return df_temp
-
-
-        # plotting the distribution of the binned feature based on WOE
-        def plot(rotation=0):
-            self.__plot_woe(df_temp, rotation=rotation)
-            return df_temp
+        if safety:
+            self.__safety_check(df=df_temp, column=column, threshold=threshold)
 
 
 
@@ -248,9 +238,20 @@ class WoeAnalysis:
         else:
             self.IV_excel = df_temp2
 
-        print(554)
+
+        # plotting the distribution of the binned feature based on WOE
+        def plot(rotation=0):
+            self.__plot_woe(df_temp, rotation=rotation)
+            return df_temp
+
         # Return the custom DataFrame wrapper that includes the plot and safety methods
-        return CustomDataFrameWrapper(df_temp,  plot, safety)
+        return CustomDataFrameWrapper(df = df_temp, plot_func = plot)
+
+
+
+
+
+
 
 
 
@@ -308,6 +309,5 @@ class WoeAnalysis:
             self.__plot_woe(df_temp, rotation=rotation)
             return df_temp
 
-        df_temp.plot = plot  # Attach the plot method to the DataFrame
 
-        return df_temp
+        return CustomDataFrameWrapper(df = df_temp, plot_func = plot)
