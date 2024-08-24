@@ -138,7 +138,7 @@ class WoeAnalysis:
     def __init__(self):
         self.WoE_dict = {}
         self.IV_dict = {}
-        self.IV_excel = pd.DataFrame(columns=['Partitions', 'Total', 'Total Dist', 'Good', 'Good Rate', 'Bad', 'Bad Rate',
+        self.IV_excel = pd.DataFrame(columns=['Partitions', 'Total', 'TotalPerc', 'Good', 'Good Rate', 'Bad', 'Bad Rate',
                                               'Good Dist', 'Bad Dist', 'Woe', 'Good Rate Difference', 'Woe Difference',
                                               'IV', 'PIV','Validation', 'Variable'])
 
@@ -250,7 +250,7 @@ class WoeAnalysis:
 
 
         # selecting relevant columns to return
-        df = df[[column_name, 'Total', 'Total Dist', 'Good', 'Good Rate', 'Bad', 'Bad Rate',
+        df = df[[column_name, 'Total', 'TotalPerc', 'Good', 'Good Rate', 'Bad', 'Bad Rate',
                  'Good Dist', 'Bad Dist', 'Woe', 'Good Rate Difference', 'Woe Difference', 'IV', 'PIV', 'Validation']]
         return df
 
