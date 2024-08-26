@@ -138,7 +138,7 @@ class WoeAnalysis:
     def __init__(self):
         self.WoE_dict = {}
         self.IV_dict = {}
-        self.IV_excel = pd.DataFrame(columns=['Partitions', 'Total', 'TotalPerc', 'Good', 'Good Rate', 'Bad', 'Bad Rate',
+        self.IV_excel = pd.DataFrame(columns=['Partitions', 'Total', 'Total Perc', 'Good', 'Good Rate', 'Bad', 'Bad Rate',
                                               'Good Dist', 'Bad Dist', 'Woe', 'Good Rate Difference', 'Woe Difference',
                                               'IV', 'PIV','Validation', 'Variable'])
 
@@ -231,26 +231,26 @@ class WoeAnalysis:
         df.columns = [column_name, 'Total', 'Good Rate']
 
         # defining and counting new columns for dataframe
-        df['TotalPerc'] = (df['Total'] / df['Total'].sum()) * 100  # partition percentage share in relation to the total (partitions are for example: E2,E3,A1 etc..etc)
+        df['Total Perc'] = (df['Total'] / df['Total'].sum()) * 100  # partition percentage share in relation to the total (partitions are for example: E2,E3,A1 etc..etc)
         df['Good'] = df['Good Rate'] * df['Total']  # number of good clients for each partition
         df['Bad'] = (1 - df['Good Rate']) * df['Total']  # number of bad clients for each partition
-        df['Bad Rate'] = 1 - df['Good Rate']  # percentage of bad clients in each partition
-        df['Good Dist'] = df['Good'] / df['Good'].sum()   # percentage of good customers that got into specific partition out of all good customers
-        df['Bad Dist'] = df['Bad'] / df['Bad'].sum()   # percentage of bad customers that got into specific partition out of all good customers
+        df['Good Rate'] = df['Good Rate'] * 100  # percentage of good clients in each partition
+        df['Bad Rate'] = (100 - df['Good Rate'])  # percentage of bad clients in each partition
+        df['Good Dist'] = (df['Good'] / df['Good'].sum())*100   # percentage of good customers that got into specific partition out of all good customers
+        df['Bad Dist'] = (df['Bad'] / df['Bad'].sum())*100   # percentage of bad customers that got into specific partition out of all good customers
         df['Woe'] = np.log(df['Good Dist'] / df['Bad Dist'])  # weight of evidence
         if type == "discrete":
             df = df.sort_values('Woe').reset_index(drop=True)
         df['Good Rate Difference'] = df['Good Rate'].diff().abs()   # difference between every next one Good Rate
         df['Woe Difference'] = df['Woe'].diff().abs()    # difference between every next one Eight of Evidence
-        df['IV'] = (df['Good Dist'] - df['Bad Dist']) * df['Woe']  # Information Value ?????????? ბარემ რო 246 ლაინი განმვარტოთ ისე და აღარ გადავაწეროთ????
-        df['PIV'] = df['IV']   # Partition Information Value
-        df['IV'] = df['IV'].sum()   # Variable Information Value
+        df['PIV'] = (df['Good Dist'] - df['Bad Dist']) * df['Woe']  # Partition Information Value
+        df['IV'] = df['PIV'].sum()   # Variable Information Value
         df['Validation'] = df['Total'].sum() == length   # ensures that None values are handled properly
 
 
 
         # selecting relevant columns to return
-        df = df[[column_name, 'Total', 'TotalPerc', 'Good', 'Good Rate', 'Bad', 'Bad Rate',
+        df = df[[column_name, 'Total', 'Total Perc', 'Good', 'Good Rate', 'Bad', 'Bad Rate',
                  'Good Dist', 'Bad Dist', 'Woe', 'Good Rate Difference', 'Woe Difference', 'IV', 'PIV', 'Validation']]
         return df
 
