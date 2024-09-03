@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-class Preprocessing:
+class Processing:
     """
     A class that initializes a preprocessing pipeline for data transformations.
 

@@ -2,99 +2,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-
-
-class CustomDataFrameWrapper:
-
-    """
-    A class that initialises plotting dataframe
-
-    Methods:
-    --------
-    plot():
-        calls the stored plot function with the given arguments
-
-    """
-
-    def __init__(self, df, plot_func):
-        self.df = df  # DataFrame object
-        self.plot_func = plot_func   # plotting function
-
-
-    def plot(self, *args, **kwargs):
-        """
-        Args
-        ----------
-        *args : tuple
-            Positional arguments that are passed to the plotting function.
-        **kwargs : dict
-            Keyword arguments that are passed to the plotting function.
-
-        Returns
-        -------
-        CustomDataFrameWrapper
-            The wrapper object itself, allowing for method chaining.
-        """
-
-        # executing plotting function
-        self.plot_func(*args, **kwargs)
-        return self  # Return the wrapper object itself for chaining
-
-    def __getattr__(self, name):
-        """
-        Args
-        ----------
-        name : str
-            The name of the attribute to be accessed on the wrapped DataFrame.
-
-        Returns
-        -------
-        Any
-            The attribute from the wrapped DataFrame corresponding to the provided name.
-
-        Raises
-        ------
-        AttributeError
-            If the attribute does not exist in the wrapped DataFrame.
-        """
-        return getattr(self.df, name)
-
-    def __getitem__(self, key):
-        """
-        Args
-        ----------
-        key : str, int, or slice
-            The key used to access an item in the wrapped DataFrame. This can be
-            a column name, an integer index, or a slice object.
-
-        Returns
-        -------
-        Any
-            The value from the wrapped DataFrame corresponding to the provided key.
-
-        Raises
-        ------
-        KeyError
-            If the key does not exist in the wrapped DataFrame.
-        """
-        return self.df[key]
-
-    def __setitem__(self, key, value):
-        """
-        Args
-        ----------
-        key : str or int
-            The key used to set an item in the wrapped DataFrame. Typically, this is a column name.
-        value : Any
-            The value to be assigned to the specified key in the wrapped DataFrame.
-
-        Returns
-        -------
-        None
-        """
-        self.df[key] = value
-
-
+from pathlib import Path as pth
+import os
 
 
 class WoeAnalysis:
@@ -167,7 +76,6 @@ class WoeAnalysis:
             raise ValueError(
                 f"Column '{column}' has {len(df[column].value_counts())} unique values, which exceeds the limit of {threshold}."
                 f"If you want to keep tracking the data set safety parameter to False or change threshold to higher value")
-
 
 
 
@@ -255,7 +163,7 @@ class WoeAnalysis:
         return df
 
 
-    def __plot_woe(self, woe_df, rotation=0):
+    def _plot_woe(self, woe_df, rotation=0):
         """
         Plotting by Woe, Woe on y-axis and subcategories (categories of variables) on x-axis.
         A bar chart is also added with the y values taken from the 'Total' column.
@@ -293,9 +201,48 @@ class WoeAnalysis:
         ax1.set_title(f'{woe_df.columns[0]}')
         ax1.grid(False)
         # plt.show()
+        return self
 
 
-    def discrete(self, column, df, target, safety = True, threshold = 300):
+    def _save_file(path=None, name = None ,format=None,type=1, column=None,df1=None, df2=None):
+        if type not in [1,2]:
+            raise ValueError("type must be 1 ot 2")
+
+        if format not in [".xlsx",".txt",".csv",".pkl"]:
+            raise ValueError('type must be .xlsx,.txt,.csv,.pkl ')
+
+        last_element = pth(path).name.split(".")
+
+        if len(last_element) not in (1,2):
+            raise ValueError('unsupported value')
+
+
+        file_name = name or last_element[0] if len(last_element) == 2 else column
+        file_format = format or last_element[1] if len(last_element) == 2 else ".xlsx"
+        file_path = str(path.parent) if len(last_element) == 2 else path
+        full_file_path = os.path.join(file_path, file_name + file_format)
+
+        if not os.path.exists(file_path):
+            os.makedirs(file_path)
+
+        # Select the DataFrame based on the type
+        df_to_save = df1 if type == 1 else df2
+
+        if file_format == '.xslx':
+            df_to_save.to_excel(full_file_path, index=False)
+        elif file_format == '.txt':
+            df_to_save.to_csv(full_file_path, index=False)
+        elif file_format == '.csv':
+            df_to_save.to_csv(full_file_path, index=False, encoding="UTF-8")
+        elif file_format == '.pkl':
+            df_to_save.to_pickle(full_file_path)
+
+        return df1
+
+
+
+
+    def discrete(self, column, df, target, safety=True, threshold=300):
         """
         Determining discrete features' distributions
 
@@ -304,62 +251,99 @@ class WoeAnalysis:
             df (dataframe): training data
             target (dataframe): target data
             safety (bool, optional): determines unique values for column
-            threshold(int, optional): threshold for number of unique values in column
+            threshold (int, optional): threshold for number of unique values in column
         """
-        # copy of original dataframe
+        # Copy of original dataframe
         df_temp = df.copy()
 
-        # checking if safety is on and executing safety checker function
+        # Checking if safety is on and executing safety checker function
         if safety:
             self.__safety_check(df=df_temp, column=column, threshold=threshold)
 
-
-
-
-
-        # converting categorical variables to dummy variables for the especific columns
+        # Converting categorical variables to dummy variables for the specified column
         df_temp = self.__discrete_dummies(df_temp, column=column)
 
-        # calculating WOE (Weight of Evidence) for the binned feature
+        # Calculating WOE (Weight of Evidence) for the binned feature
         df_temp = self.__woe(df=df_temp, column_name=column, target_df=target, type="discrete")
 
         self.WoE_dict = {k: v for k, v in self.WoE_dict.items() if f"{column}" not in k}
 
-        # saving the Woe values in a dictionary for each bin of the feature
+        # Saving the Woe values in a dictionary for each bin of the feature
         for i, row in df_temp.iterrows():
             self.WoE_dict[f'{column}:' + str(row[column])] = row['Woe']
 
         self.IV_dict = {k: v for k, v in self.IV_dict.items() if f"{column}" not in k}
 
-        # calculating and storing the Information Value (IV) of the feature
+        # Calculating and storing the Information Value (IV) of the feature
         self.IV_dict[column] = df_temp['IV'].values[0]
 
-        # creating a copy of df_temp to modify and store in IV_excel
+        # Creating a copy of df_temp to modify and store in IV_excel
         df_temp2 = df_temp.copy()
 
-        # adding the feature name to the "Variable" column
+        # Adding the feature name to the "Variable" column
         df_temp2['Variable'] = column
 
-        # renaming the original feature column to "Partitions"
+        # Renaming the original feature column to "Partitions"
         df_temp2 = df_temp2.rename(columns={column: "Partitions"})
 
-        # dropping rows in IV_excel where "Variable" equals column
+        # Dropping rows in IV_excel where "Variable" equals column
         self.IV_excel = self.IV_excel[self.IV_excel['Variable'] != column]
 
-        # concatenating the modified DataFrame to IV_excel
+        # Concatenating the modified DataFrame to IV_excel
         if self.IV_excel is not None and not self.IV_excel.empty:
             self.IV_excel = pd.concat([self.IV_excel, df_temp2], axis=0)
         else:
             self.IV_excel = df_temp2
 
+        # Define PlottingDataFrame as a subclass of pd.DataFrame
+        class PlottingDataFrame(pd.DataFrame):
+            _metadata = ['_parent']
 
-        # plotting the distribution of the binned feature based on WOE
-        def plot(rotation=0):
-            self.__plot_woe(df_temp, rotation=rotation)
-            return df_temp
+            @property
+            def _constructor(self):
+                def _c(*args, **kwargs):
+                    return PlottingDataFrame(*args, **kwargs)._set_parent(self._parent)
+                return _c
 
-        # return the custom DataFrame wrapper that includes the plot and safety methods
-        return CustomDataFrameWrapper(df=df_temp, plot_func=plot)
+            def _set_parent(self, parent):
+                self._parent = parent
+                return self
+
+            def plot(self, rotation=0):
+                """
+                Plots the WOE values using the stored DataFrame and returns the DataFrame.
+
+                Args:
+                    rotation (int): Rotation angle for x-axis labels, 0 by default.
+
+                Returns:
+                    PlottingDataFrame: Returns the DataFrame object itself after plotting.
+                """
+                self._parent._plot_woe(self, rotation=rotation)
+                return self
+
+            def save(self, path=None, name=None, file_format=".xlsx", type=1, column=None):
+                """
+                Saves the DataFrame using the _save_file method of the WoeAnalysis class.
+
+                Args:
+                    path (str or Path, optional): Directory path where the file will be saved.
+                    name (str, optional): File name. If not provided, the column name will be used.
+                    file_format (str, optional): Format of the file. Default is ".xlsx".
+                    type (int, optional): Type of DataFrame to save if multiple options exist.
+                    column (str, optional): Column name used if the name is not provided.
+
+                Returns:
+                    PlottingDataFrame: The DataFrame object itself after saving.
+                """
+                self._parent._save_file(path=path, name=name, format=file_format, type=type, column=column, df1=self)
+                return self
+
+        # Create an instance of PlottingDataFrame and set the parent
+        result = PlottingDataFrame(df_temp)._set_parent(self)
+
+        # Return the custom DataFrame with added plot and save capabilities
+        return result
 
 
 
@@ -419,9 +403,51 @@ class WoeAnalysis:
             self.IV_excel = df_temp2
 
         # plotting the distribution of the binned feature based on WOE
-        def plot(rotation=0):
-            self.__plot_woe(df_temp, rotation=rotation)
-            return df_temp
+        class PlottingDataFrame(pd.DataFrame):
+            _metadata = ['_parent']
 
+            @property
+            def _constructor(self):
+                def _c(*args, **kwargs):
+                    return PlottingDataFrame(*args, **kwargs)._set_parent(self._parent)
+                return _c
 
-        return CustomDataFrameWrapper(df=df_temp, plot_func=plot)
+            def _set_parent(self, parent):
+                self._parent = parent
+                return self
+
+            def plot(self, rotation=0):
+                """
+                Plots the WOE values using the stored DataFrame and returns the DataFrame.
+
+                Args:
+                    rotation (int): Rotation angle for x-axis labels, 0 by default.
+
+                Returns:
+                    PlottingDataFrame: Returns the DataFrame object itself after plotting.
+                """
+                self._parent._plot_woe(self, rotation=rotation)
+                return self
+
+            def save(self, path=None, name=None, file_format=".xlsx", type=1, column=None):
+                """
+                Saves the DataFrame using the _save_file method of the WoeAnalysis class.
+
+                Args:
+                    path (str or Path, optional): Directory path where the file will be saved.
+                    name (str, optional): File name. If not provided, the column name will be used.
+                    file_format (str, optional): Format of the file. Default is ".xlsx".
+                    type (int, optional): Type of DataFrame to save if multiple options exist.
+                    column (str, optional): Column name used if the name is not provided.
+
+                Returns:
+                    PlottingDataFrame: The DataFrame object itself after saving.
+                """
+                self._parent._save_file(path=path, name=name, format=file_format, type=type, column=column, df1=self)
+                return self
+
+        # Create an instance of PlottingDataFrame and set the parent
+        result = PlottingDataFrame(df_temp)._set_parent(self)
+
+        # Return the custom DataFrame with added plot and save capabilities
+        return result
