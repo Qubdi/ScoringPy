@@ -296,54 +296,77 @@ class WoeAnalysis:
             self.IV_excel = df_temp2
 
         # Define PlottingDataFrame as a subclass of pd.DataFrame
-        class PlottingDataFrame(pd.DataFrame):
-            _metadata = ['_parent']
+        # class PlottingDataFrame(pd.DataFrame):
+        #     _metadata = ['_parent']
+        #
+        #     @property
+        #     def _constructor(self):
+        #         def _c(*args, **kwargs):
+        #             return PlottingDataFrame(*args, **kwargs)._set_parent(self._parent)
+        #         return _c
+        #
+        #     def _set_parent(self, parent):
+        #         self._parent = parent
+        #         return self
+        #
+        #     def plot(self, rotation=0):
+        #         """
+        #         Plots the WOE values using the stored DataFrame and returns the DataFrame.
+        #
+        #         Args:
+        #             rotation (int): Rotation angle for x-axis labels, 0 by default.
+        #
+        #         Returns:
+        #             PlottingDataFrame: Returns the DataFrame object itself after plotting.
+        #         """
+        #         self._parent._plot_woe(self, rotation=rotation)
+        #         return self
+        #
+        #     def save(self, path=None, name=None, file_format=".xlsx", type=1, column=None):
+        #         """
+        #         Saves the DataFrame using the _save_file method of the WoeAnalysis class.
+        #
+        #         Args:
+        #             path (str or Path, optional): Directory path where the file will be saved.
+        #             name (str, optional): File name. If not provided, the column name will be used.
+        #             file_format (str, optional): Format of the file. Default is ".xlsx".
+        #             type (int, optional): Type of DataFrame to save if multiple options exist.
+        #             column (str, optional): Column name used if the name is not provided.
+        #
+        #         Returns:
+        #             PlottingDataFrame: The DataFrame object itself after saving.
+        #         """
+        #         self._parent._save_file(path=path, name=name, format=file_format, type=type, column=column, df1=self)
+        #         return self
 
-            @property
-            def _constructor(self):
-                def _c(*args, **kwargs):
-                    return PlottingDataFrame(*args, **kwargs)._set_parent(self._parent)
-                return _c
 
-            def _set_parent(self, parent):
+        # Internal subclass for plotting and saving.
+        class DiscretePlotter:
+            def __init__(self, parent, data):
                 self._parent = parent
+                self._data = data
+
+            def plot(self):
+                """Plot the WoE values for the discrete variable."""
+                self._parent._plot_woe(self._data)
+                plt.show()
                 return self
 
-            def plot(self, rotation=0):
-                """
-                Plots the WOE values using the stored DataFrame and returns the DataFrame.
-
-                Args:
-                    rotation (int): Rotation angle for x-axis labels, 0 by default.
-
-                Returns:
-                    PlottingDataFrame: Returns the DataFrame object itself after plotting.
-                """
-                self._parent._plot_woe(self, rotation=rotation)
+            def save(self, path=None, name=None, file_format=".xlsx", type=1):
+                """Save the DataFrame to a specified format and location."""
+                self._parent._save_file(path=path, name=name, format=file_format, type=type, column=column, df1=self._data)
                 return self
 
-            def save(self, path=None, name=None, file_format=".xlsx", type=1, column=None):
-                """
-                Saves the DataFrame using the _save_file method of the WoeAnalysis class.
+        # Return the instance of the DiscretePlotter with the updated data.
+        return DiscretePlotter(self, df_temp2)
 
-                Args:
-                    path (str or Path, optional): Directory path where the file will be saved.
-                    name (str, optional): File name. If not provided, the column name will be used.
-                    file_format (str, optional): Format of the file. Default is ".xlsx".
-                    type (int, optional): Type of DataFrame to save if multiple options exist.
-                    column (str, optional): Column name used if the name is not provided.
 
-                Returns:
-                    PlottingDataFrame: The DataFrame object itself after saving.
-                """
-                self._parent._save_file(path=path, name=name, format=file_format, type=type, column=column, df1=self)
-                return self
 
         # Create an instance of PlottingDataFrame and set the parent
-        result = PlottingDataFrame(df_temp)._set_parent(self)
+        # result = PlottingDataFrame(df_temp)._set_parent(self)
 
         # Return the custom DataFrame with added plot and save capabilities
-        return result
+        # return result
 
 
 
