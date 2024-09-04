@@ -1,64 +1,59 @@
 import pandas as pd
 import numpy as np
 
+
 class Processing:
-    """
-    A class that initializes a preprocessing pipeline for data transformations.
-
-    This class allows you to sequentially apply multiple transformation functions
-    to a given dataset.
-
-    Methods:
-    --------
-    add_step(func, *args, **kwargs):
-        Adds a transformation step to the pipeline. The step is stored as a
-        tuple containing the function, its positional arguments, and keyword arguments.
-
-    apply(data):
-        Applies all the stored transformation steps to the input data sequentially.
-        Returns the transformed data.
-    """
-
     def __init__(self):
-        # initialize an empty list to hold the transformation steps that are stored as a tuple containing a function,
-        # its arguments, and keyword arguments.
-        self.steps = []
+        self.steps = []  # List to store functions and their arguments to be executed in sequence
+        self.context = {}  # Dictionary to store intermediate data between steps
 
     def add_step(self, func, *args, **kwargs):
         """
-        Add a transformation step to the pipeline.
+        Adds a function step to the pipeline.
 
         Args:
-            func (callable): The function to apply as a transformation.
+            func (callable): A function to add to the pipeline.
             *args: Positional arguments to pass to the function.
             **kwargs: Keyword arguments to pass to the function.
-
-        This method adds a transformation function along with its arguments to the list of steps.
-        Each step is a tuple containing the function, its positional arguments, and keyword arguments.
         """
-        # adding transformation step  to the steps list.
         self.steps.append((func, args, kwargs))
 
-    def apply(self, data):
+    def run(self):
         """
-        Apply all steps to the data.
-
-        Args:
-            data: The input data that will be transformed by the pipeline.
+        Executes all steps in the pipeline in the order they were added.
+        Stores results in context based on the function name.
 
         Returns:
-            Transformed data after applying all the steps in the pipeline.
-
-        This method iterates through all the steps in the pipeline, applying each function to the data
-        with the corresponding arguments. The data is updated with each transformation,
-        and the final transformed data is returned.
+            The result of the last function executed.
         """
-        # iterating through each step in the pipeline.
+        result = None
         for func, args, kwargs in self.steps:
-            # applying function to the data
-            data = func(data, *args, **kwargs)
-        return data
+            # Execute each function with the provided arguments
+            result = func(*args, **kwargs)
+            # Automatically update context using the function name as a key
+            self._update_context(func, result)
+        return result
 
+    def _update_context(self, func, result):
+        """
+        Updates the pipeline's context with the result of a function.
+
+        Args:
+            func (callable): The function whose result is being stored.
+            result: The result returned by the function.
+        """
+        if isinstance(result, pd.DataFrame):
+            # Use the function name (without 'process_' prefix) as the key
+            key = func.__name__.replace("process_", "")
+            self.context[key] = result
+
+    def clear(self):
+        """
+        Clears the pipeline's context and steps to free up memory.
+        """
+        self.steps.clear()
+        self.context.clear()
+        print("Pipeline data cleared to free up memory.")
 
 class WoE_Binning:
     """
