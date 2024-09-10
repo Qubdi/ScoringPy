@@ -151,7 +151,7 @@ class WoeAnalysis:
             df = df.sort_values('Woe').reset_index(drop=True)
         df['Good Rate Difference'] = df['Good Rate'].diff().abs()   # difference between every next one Good Rate
         df['Woe Difference'] = df['Woe'].diff().abs()    # difference between every next one Eight of Evidence
-        df['PIV'] = (df['Good Dist'] - df['Bad Dist']) * df['Woe']  # Partition Information Value
+        df['PIV'] = ((df['Good Dist'] - df['Bad Dist']))/100 * df['Woe']  # Partition Information Value
         df['IV'] = df['PIV'].sum()   # Variable Information Value
         df['Validation'] = df['Total'].sum() == length   # ensures that None values are handled properly
 
