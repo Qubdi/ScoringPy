@@ -1,5 +1,9 @@
 from setuptools import setup, find_packages
 
+# python setup.py sdist bdist_wheel
+# pip install dist/ScoringPy-0.0.2.tar.gz
+# pip install dist/ScoringPy-0.0.2-py3-none-any.whl
+# pip install --force-reinstall dist/ScoringPy-0.0.2-py3-none-any.whl
 
 setup(
     name="ScoringPy",  # The name of your package

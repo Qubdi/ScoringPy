@@ -81,8 +81,6 @@ class WoeAnalysis:
                 f"Column '{column}' has {len(df[column].value_counts())} unique values, which exceeds the limit of {threshold}."
                 f"If you want to keep tracking the data set safety parameter to False or change threshold to higher value")
 
-
-
     def __discrete_dummies(self,df, column):
         """
         This function creates new columns for each unique value in the specified column,
@@ -208,12 +206,13 @@ class WoeAnalysis:
         return self
 
 
-    def _save_file(path=None, name = None ,format=None,type=1, column=None,df1=None, df2=None):
+    def _save_file(self, path=None, name = None ,format=None,type=1, column=None,df1=None, df2=None):
         if type not in [1,2]:
             raise ValueError("type must be 1 ot 2")
 
         if format not in [".xlsx",".txt",".csv",".pkl"]:
             raise ValueError('type must be .xlsx,.txt,.csv,.pkl ')
+
 
         last_element = pth(path).name.split(".")
 
@@ -223,7 +222,7 @@ class WoeAnalysis:
 
         file_name = name or last_element[0] if len(last_element) == 2 else column
         file_format = format or last_element[1] if len(last_element) == 2 else ".xlsx"
-        file_path = str(path.parent) if len(last_element) == 2 else path
+        file_path = str(pth(path).parent) if len(last_element) == 2 else path
         full_file_path = os.path.join(file_path, file_name + file_format)
 
         if not os.path.exists(file_path):
@@ -231,8 +230,7 @@ class WoeAnalysis:
 
         # Select the DataFrame based on the type
         df_to_save = df1 if type == 1 else df2
-
-        if file_format == '.xslx':
+        if file_format == '.xlsx':
             df_to_save.to_excel(full_file_path, index=False)
         elif file_format == '.txt':
             df_to_save.to_csv(full_file_path, index=False)
@@ -242,8 +240,6 @@ class WoeAnalysis:
             df_to_save.to_pickle(full_file_path)
 
         return df1
-
-
 
 
     def discrete(self, column, df, target, safety=True, threshold=300):
@@ -299,65 +295,33 @@ class WoeAnalysis:
         else:
             self.IV_excel = df_temp2
 
-        # Define PlottingDataFrame as a subclass of pd.DataFrame
-        class PlottingDataFrame(pd.DataFrame):
-            _metadata = ['_parent']
-
-            @property
-            def _constructor(self):
-                def _c(*args, **kwargs):
-                    return PlottingDataFrame(*args, **kwargs)._set_parent(self._parent)
-                return _c
-
-            def _set_parent(self, parent):
-                self._parent = parent
-                return self
-
-            def plot(self, rotation=0):
-                """
-                Plots the WOE values using the stored DataFrame and returns the DataFrame.
-
-                Args:
-                    rotation (int): Rotation angle for x-axis labels, 0 by default.
-
-                Returns:
-                    PlottingDataFrame: Returns the DataFrame object itself after plotting.
-                """
-                self._parent._plot_woe(self, rotation=rotation)
-                return self
-
-            def save(self, save=False, path=None, name=None, file_format=".xlsx", type=1, column=None):
-                """
-                Saves the DataFrame using the _save_file method of the WoeAnalysis class.
-
-                Args:
-                    path (str or Path, optional): Directory path where the file will be saved.
-                    name (str, optional): File name. If not provided, the column name will be used.
-                    file_format (str, optional): Format of the file. Default is ".xlsx".
-                    type (int, optional): Type of DataFrame to save if multiple options exist.
-                    column (str, optional): Column name used if the name is not provided.
-
-                Returns:
-                    PlottingDataFrame: The DataFrame object itself after saving.
-                """
-                if save:
-                    self._parent._save_file(path=path, name=name, format=file_format, type=type, column=column, df1=self)
-                return self
-
-        # Create an instance of PlottingDataFrame and set the parent
-        result = PlottingDataFrame(df_temp)._set_parent(self)
 
         self.Variable_types[column] = 'discrete'
 
-        # Return the custom DataFrame with added plot and save capabilities
-        return result
 
 
+        class DiscretePlotter:
+            def __init__(self, parent, df_temp):
+                self._parent = parent
+                self._df_temp = df_temp
 
+            def plot(self, rotation=0):
+                """Plot the WoE values for the discrete variable."""
+                self._parent._plot_woe(self._df_temp, rotation=rotation)
+                return self
 
+            def save(self, save=True, path=None, name=None, file_format=".xlsx", type=1):
+                """Save the DataFrame to a specified format and location."""
+                if save:
+                    self._parent._save_file(path=path, name=name, format=file_format, type=type, column=column, df1=self._df_temp, df2=df_temp2)
+                return self
 
+            def __call__(self):
+                """Return the DataFrame when called."""
+                return self._df_temp
 
-
+        # Return only the DiscretePlotter object
+        return DiscretePlotter(self, df_temp)
 
 
 
@@ -401,7 +365,7 @@ class WoeAnalysis:
         df_temp2 = df_temp2.rename(columns={f'{column}_factor': "Partitions"})
 
         # dropping rows in IV_excel where "Variable" equals column
-        self.IV_excel = self.IV_excel[self.IV_excel['Variable'] != f'{column}_factor']
+        self.IV_excel = self.IV_excel[self.IV_excel['Variable'] != f'{column}']
 
         # concatenating the modified DataFrame to IV_excel
         if self.IV_excel is not None and not self.IV_excel.empty:
@@ -409,57 +373,36 @@ class WoeAnalysis:
         else:
             self.IV_excel = df_temp2
 
-        # plotting the distribution of the binned feature based on WOE
-        class PlottingDataFrame(pd.DataFrame):
-            _metadata = ['_parent']
-
-            @property
-            def _constructor(self):
-                def _c(*args, **kwargs):
-                    return PlottingDataFrame(*args, **kwargs)._set_parent(self._parent)
-                return _c
-
-            def _set_parent(self, parent):
-                self._parent = parent
-                return self
-
-            def plot(self, rotation=0):
-                """
-                Plots the WOE values using the stored DataFrame and returns the DataFrame.
-
-                Args:
-                    rotation (int): Rotation angle for x-axis labels, 0 by default.
-
-                Returns:
-                    PlottingDataFrame: Returns the DataFrame object itself after plotting.
-                """
-                self._parent._plot_woe(self, rotation=rotation)
-                return self
-
-            def save(self, path=None, name=None, file_format=".xlsx", type=1, column=None):
-                """
-                Saves the DataFrame using the _save_file method of the WoeAnalysis class.
-
-                Args:
-                    path (str or Path, optional): Directory path where the file will be saved.
-                    name (str, optional): File name. If not provided, the column name will be used.
-                    file_format (str, optional): Format of the file. Default is ".xlsx".
-                    type (int, optional): Type of DataFrame to save if multiple options exist.
-                    column (str, optional): Column name used if the name is not provided.
-
-                Returns:
-                    PlottingDataFrame: The DataFrame object itself after saving.
-                """
-                self._parent._save_file(path=path, name=name, format=file_format, type=type, column=column, df1=self)
-                return self
-
-        # Create an instance of PlottingDataFrame and set the parent
-        result = PlottingDataFrame(df_temp)._set_parent(self)
 
         self.Variable_types[column] = 'continuous'
         self.Variable_Ranges[column] = bins
-        # Return the custom DataFrame with added plot and save capabilities
-        return result
+
+        # plotting the distribution of the binned feature based on WOE
+        # Define PlottingDataFrame as a subclass of pd.DataFrame
+        class DiscretePlotter:
+            def __init__(self, parent, df_temp):
+                self._parent = parent
+                self._df_temp = df_temp
+
+            def plot(self, rotation=0):
+                """Plot the WoE values for the discrete variable."""
+                self._parent._plot_woe(self._df_temp, rotation=rotation)
+                return self
+
+            def save(self, save=True, path=None, name=None, file_format=".xlsx", type=1):
+                """Save the DataFrame to a specified format and location."""
+                if save:
+                    self._parent._save_file(path=path, name=name, format=file_format, type=type, column=column, df1=self._df_temp, df2=df_temp2)
+                return self
+
+            def __call__(self):
+                """Return the DataFrame when called."""
+                return self._df_temp
+
+        # Return only the DiscretePlotter object
+        return DiscretePlotter(self, df_temp)
+
+
 
 
 class WoeBinning:
