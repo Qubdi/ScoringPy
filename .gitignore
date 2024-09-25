@@ -143,5 +143,4 @@ dmypy.json
 
 
 .idea/
-ScoringPy.egg-info/
-.
+.ScoringPy.egg-info/
