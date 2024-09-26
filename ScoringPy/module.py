@@ -316,7 +316,7 @@ class WoeAnalysis:
                     self._parent._save_file(path=path, name=name, format=file_format, type=type, column=column, df1=self._df_temp, df2=df_temp2)
                 return self
 
-            def __call__(self):
+            def report(self):
                 """Return the DataFrame when called."""
                 return self._df_temp
 
@@ -395,7 +395,7 @@ class WoeAnalysis:
                     self._parent._save_file(path=path, name=name, format=file_format, type=type, column=column, df1=self._df_temp, df2=df_temp2)
                 return self
 
-            def __call__(self):
+            def report(self):
                 """Return the DataFrame when called."""
                 return self._df_temp
 
