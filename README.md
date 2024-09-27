@@ -54,7 +54,10 @@ conda install -c conda-forge ScoringPy
 
 
 - **`Processing`**: Designed for Data Preprocesing.
-- **`WoeAnalysis`**: Designed for Feature amnd bining Selection.
+- **`WoeAnalysis`**: Designed for Feature and binning Selection.
+- **`WoeBinning`**: Designed for data Transformation based on Feature and binning Selection.
+- **`CreditScoring`**: Designed for scaling scoring and probabilities based on model and some constant parameters.
+
 
 ### Processing
 Type 1:
@@ -73,17 +76,17 @@ pipeline = Processing(flow=True)
 
 # Function that defines step 1 of the pipeline
 def step_1(data):
-  data['Age'] = data['Age'].fillna(data['Age'].mean())  # Filling missing 'Age' values with the mean of the 'Age' column.
+  data['Age'] = data['Age'].fillna(data['Age'].mean())  
   return data
 
 # Function that defines step 2 of the pipeline
 def step_2(data):
-  data['Age'] = data['Age'] * 2  # Doubling the 'Age' values.
+  data['Age'] = data['Age'] * 2  
   return data
 
 # Function that defines step 3 of the pipeline
 def step_3(data):
-  data['Age'] = data['Age'] / 5  # Dividing the 'Age' values by 5.
+  data['Age'] = data['Age'] / 5  
   return data
 
 # Adding step 1 to the processing pipeline.
@@ -159,12 +162,12 @@ pipeline = Processing(flow=False)
 
 # Step 1: Load data from an Excel file (provided as 'path').
 def step_1(path=None):
-  data = pd.read_excel(path)  # Reading the data from the specified Excel file.
+  data = pd.read_excel(path)  
   return data
 
 # Step 2: Load a different dataset from another Excel file ('Data/step2.xlsx').
 def step_2():
-  data = pd.read_excel('Data/step2.xlsx')  # Reading data from 'step2.xlsx'.
+  data = pd.read_excel('Data/step2.xlsx')  
   return data
 
 # Step 3: Concatenate the results from step 1 and step 2.
@@ -176,12 +179,12 @@ def step_3():
   # Concatenating the two DataFrames from step 1 and step 2.
   data = pd.concat([step_1_data, step_2_data], ignore_index=True)
 
-  data['Age'] = data['Age'] * 2  # Doubling the 'Age' values.
+  data['Age'] = data['Age'] * 2  
   return data
 
 # Step 4: Further transformation of the data by dividing the 'Age' column by 5.
 def step_4(data):
-  data['Age'] = data['Age'] / 5  # Dividing the 'Age' values by 5.
+  data['Age'] = data['Age'] / 5 
   return data
 
 
@@ -274,7 +277,7 @@ import numpy as np
 
 
 # intialising WoeAnalysis class
-woe_analysis = WoeAnalysis()
+woe_analysis = WoeAnalysis(save=False,path="Data/", type=2)
 
 
 # default is: safety=True, threshold=300
@@ -294,7 +297,7 @@ woe_analysis.discrete(column="MaritalStatus", df=X_train, target=y_train).plot(r
 # have several paraeters path=path, name=name, format=file_format, type=type
 # it will plot Woe and IV and aslo show report as well as show report
 # Report method must be last one in every case 
-woe_analysis.discrete(column="MaritalStatus", df=X_train, target=y_train).save(save=True, path="Data",file_format=".xlsx", type=1).report()
+woe_analysis.discrete(column="MaritalStatus", df=X_train, target=y_train).report(save=True, type=1)
 ```
 
 use Cases for `continuous`:
@@ -316,7 +319,7 @@ woe_analysis.continuous(column="RefinanceRate", bins= bins,df=X_train, target=y_
 # it will plot Woe and IV and aslo show report as well as show report
 # Report method must be last one in every case 
 bins = pd.IntervalIndex.from_tuples([(-1,0),(0, 0.2), (0.2,0.35), (0.35, 0.45),(0.45, 0.55), (0.55, 0.65),(0.65, np.inf)])
-woe_analysis.continuous(column="RefinanceRate", bins= bins,df=X_train, target=y_train).save(save=True,path="Data/", type=2).report()
+woe_analysis.continuous(column="RefinanceRate", bins= bins,df=X_train, target=y_train).report(save=True)
 ```
 
 also we can take maximum iformation from class, for future usage
@@ -326,4 +329,72 @@ Variable_types = woe_analysis.Variable_types
 Variable_Ranges = woe_analysis.Variable_Ranges
 IV_excel = woe_analysis.IV_excel
 IV_dict = woe_analysis.IV_dict
+```
+
+
+### WoeBinning
+
+```python
+# it transsform data based on WoE_dict, 
+# and retun data with only column which is in WoE_dict
+# if you dont want to transform data with whole WoE_dict,
+# remove some features from WoE_dict and give WoeBinning 
+from ScoringPy import WoeBinning
+
+WoE_dict = woe_analysis.WoE_dict
+
+# Production is paramter which is booleran and
+# if it Is False it gives us error if some row's contain outlaier
+# and if it is True it didnr rize error just remove specific 
+# row from data and continiu tranforamtion
+woe_transform = WoeBinning(WoE_dict= WoE_dict, Production=False)
+
+# transform have one optional parameter dummpy 
+# if it True it will return data with columns which comes from WoE_dict
+# if it is False it just change values and dont change columns
+X_transformed = woe_transform.transform(X,dummy=False)
+```
+
+
+### CreditScoring
+
+
+```python
+# it transsform data based on WoE_dict, 
+# and retun data with only column which is in WoE_dict
+# if you dont want to transform data with whole WoE_dict,
+# remove some features from WoE_dict and give WoeBinning 
+from sklearn.linear_model import LogisticRegression
+from ScoringPy import WoeBinning
+from ScoringPy import CreditScoring
+
+
+WoE_dict = woe_analysis.WoE_dict
+
+# Production is paramter which is booleran and
+# if it Is False it gives us error if some row's contain outlaier
+# and if it is True it didnr rize error just remove specific 
+# row from data and continiu tranforamtion
+woe_transform = WoeBinning(WoE_dict= WoE_dict, Production=False)
+
+# transform have one optional parameter dummpy 
+# if it True it will return data with columns which comes from WoE_dict
+# if it is False it just change values and dont change columns
+X_transformed = woe_transform.transform(X,dummy=False)
+
+# creating a Logistic Regression model with specified parameters
+model = LogisticRegression(max_iter=1_000, class_weight='balanced', C=0.1)
+
+
+# Example usage
+scoring = CreditScoring(data=df, model=model, WoE_dict=WoE_dict, production=True)
+
+# scaling scores for df
+temp_df = scoring.apply(df)
+
+# take data from scaling result 
+df = temp_df.data
+
+# take scorecard based on model
+scorecard = temp_df.scorecard
 ```

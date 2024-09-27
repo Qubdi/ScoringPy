@@ -8,6 +8,88 @@ import math
 import os
 
 
+
+class Processing:
+    def __init__(self, flow=True):
+        """
+        Initializes the Processing class with an optional flow parameter.
+
+        Args:
+            flow (bool, optional): If True, the default behavior is not to store data in context.
+                                   Default is False.
+        """
+        self.steps = []  # List to store functions, their arguments, and the flow setting
+        self.context = {}  # Dictionary to store intermediate data between steps
+        self.default_flow = flow  # Set the default flow behavior for the entire pipeline
+
+    def add_step(self, func, *args, flow=None, **kwargs):
+        """
+        Adds a function step to the pipeline.
+
+        Args:
+            func (callable): A function to add to the pipeline.
+            *args: Positional arguments to pass to the function.
+            flow (bool, optional): If True, the function's result will not be stored in the context
+                                   but passed to the next step.
+            **kwargs: Keyword arguments to pass to the function.
+        """
+        # If flow is not specified, use the default flow behavior of the pipeline
+        flow = flow if flow is not None else self.default_flow
+        self.steps.append((func, args, kwargs, flow))
+
+    def run(self, initial_data=None):
+        """
+        Executes all steps in the pipeline in the order they were added.
+        Stores results in context based on the function name unless flow is True.
+
+        Args:
+            initial_data: Optional initial data to pass to the first step.
+
+        Returns:
+            The result of the last function executed.
+        """
+        result = initial_data
+
+        for func, args, kwargs, flow in self.steps:
+            # Determine whether to pass the current result to the function
+            if flow:
+                # If flow is True, pass the current result to the function
+                result = func(result, *args, **kwargs) if result is not None else func(*args, **kwargs)
+            else:
+                # If flow is False, call the function without the current result
+                if result is not None:
+                    result = func(result, *args, **kwargs)
+                else:
+                    result = func(*args, **kwargs)
+
+                # Store the result in the context
+                self._update_context(func, result)
+                result = None  # Reset result to prevent passing it to the next step
+
+        return result
+
+    def _update_context(self, func, result):
+        """
+        Updates the pipeline's context with the result of a function.
+
+        Args:
+            func (callable): The function whose result is being stored.
+            result: The result returned by the function.
+        """
+        if isinstance(result, pd.DataFrame):
+            # Use the function name as the key
+            self.context[func.__name__] = result
+
+    def clear(self):
+        """
+        Clears the pipeline's context and steps to free up memory.
+        """
+        self.steps.clear()
+        self.context.clear()
+        print("Pipeline data cleared to free up memory.")
+
+
+
 class WoeAnalysis:
     """
     A class that performs Weight of Evidence (WoE) and Information Value (IV) analysis
@@ -46,7 +128,7 @@ class WoeAnalysis:
         Performs WoE and IV analysis for continuous variables by binning the data.
         """
 
-    def __init__(self):
+    def __init__(self, save=False, path=None, file_format=".xlsx", type=1):
         self.WoE_dict = {}
         self.IV_dict = {}
         self.IV_excel = pd.DataFrame(columns=['Partitions', 'Total', 'Total Perc', 'Good', 'Good Rate', 'Bad', 'Bad Rate',
@@ -54,6 +136,11 @@ class WoeAnalysis:
                                               'IV', 'PIV','Validation', 'Variable'])
         self.Variable_types = {}
         self.Variable_Ranges = {}
+
+        self.save_path = path
+        self.file_format = file_format
+        self.type = type
+        self.save = save
 
     def __safety_check(self, df, column, threshold=300):
         """
@@ -310,14 +397,10 @@ class WoeAnalysis:
                 self._parent._plot_woe(self._df_temp, rotation=rotation)
                 return self
 
-            def save(self, save=True, path=None, name=None, file_format=".xlsx", type=1):
-                """Save the DataFrame to a specified format and location."""
+            def report(self,save=self.save, path=self.save_path, name=None, file_format=self.file_format, type=self.type):
+                """Return the DataFrame when called."""
                 if save:
                     self._parent._save_file(path=path, name=name, format=file_format, type=type, column=column, df1=self._df_temp, df2=df_temp2)
-                return self
-
-            def report(self):
-                """Return the DataFrame when called."""
                 return self._df_temp
 
         # Return only the DiscretePlotter object
@@ -389,19 +472,14 @@ class WoeAnalysis:
                 self._parent._plot_woe(self._df_temp, rotation=rotation)
                 return self
 
-            def save(self, save=True, path=None, name=None, file_format=".xlsx", type=1):
-                """Save the DataFrame to a specified format and location."""
+            def report(self,save=self.save, path=self.save_path, name=None, file_format=self.file_format, type=self.type):
+                """Return the DataFrame when called."""
                 if save:
                     self._parent._save_file(path=path, name=name, format=file_format, type=type, column=column, df1=self._df_temp, df2=df_temp2)
-                return self
-
-            def report(self):
-                """Return the DataFrame when called."""
                 return self._df_temp
 
         # Return only the DiscretePlotter object
         return DiscretePlotter(self, df_temp)
-
 
 
 
@@ -458,6 +536,7 @@ class WoeBinning:
        relevant features. If dummy is False, it applies the WoE values to the transformed features
        and aggregates them based on their common prefix.
        """
+
 
         # filtering input DataFrame X to include only the relevant columns based on WoE_dict.
         X = X[list(pd.DataFrame({"name": [i.split(":")[0] for i in self.WoE_dict]})["name"].unique())]
@@ -535,7 +614,7 @@ class WoeBinning:
 
 
 class CreditScoring:
-    def __init__(self, data, WoE_dict, WoeBinning, model, production):
+    def __init__(self, data, WoE_dict, model, production):
         self.data = data
         self.WoE_dict = WoE_dict
         self.WoeBinning = WoeBinning
@@ -644,85 +723,4 @@ class CreditScoring:
         self.data = self.assign_scores()
 
         return self
-
-
-
-class Processing:
-    def __init__(self, flow=True):
-        """
-        Initializes the Processing class with an optional flow parameter.
-
-        Args:
-            flow (bool, optional): If True, the default behavior is not to store data in context.
-                                   Default is False.
-        """
-        self.steps = []  # List to store functions, their arguments, and the flow setting
-        self.context = {}  # Dictionary to store intermediate data between steps
-        self.default_flow = flow  # Set the default flow behavior for the entire pipeline
-
-    def add_step(self, func, *args, flow=None, **kwargs):
-        """
-        Adds a function step to the pipeline.
-
-        Args:
-            func (callable): A function to add to the pipeline.
-            *args: Positional arguments to pass to the function.
-            flow (bool, optional): If True, the function's result will not be stored in the context
-                                   but passed to the next step.
-            **kwargs: Keyword arguments to pass to the function.
-        """
-        # If flow is not specified, use the default flow behavior of the pipeline
-        flow = flow if flow is not None else self.default_flow
-        self.steps.append((func, args, kwargs, flow))
-
-    def run(self, initial_data=None):
-        """
-        Executes all steps in the pipeline in the order they were added.
-        Stores results in context based on the function name unless flow is True.
-
-        Args:
-            initial_data: Optional initial data to pass to the first step.
-
-        Returns:
-            The result of the last function executed.
-        """
-        result = initial_data
-
-        for func, args, kwargs, flow in self.steps:
-            # Determine whether to pass the current result to the function
-            if flow:
-                # If flow is True, pass the current result to the function
-                result = func(result, *args, **kwargs) if result is not None else func(*args, **kwargs)
-            else:
-                # If flow is False, call the function without the current result
-                if result is not None:
-                    result = func(result, *args, **kwargs)
-                else:
-                    result = func(*args, **kwargs)
-
-                # Store the result in the context
-                self._update_context(func, result)
-                result = None  # Reset result to prevent passing it to the next step
-
-        return result
-
-    def _update_context(self, func, result):
-        """
-        Updates the pipeline's context with the result of a function.
-
-        Args:
-            func (callable): The function whose result is being stored.
-            result: The result returned by the function.
-        """
-        if isinstance(result, pd.DataFrame):
-            # Use the function name as the key
-            self.context[func.__name__] = result
-
-    def clear(self):
-        """
-        Clears the pipeline's context and steps to free up memory.
-        """
-        self.steps.clear()
-        self.context.clear()
-        print("Pipeline data cleared to free up memory.")
 
