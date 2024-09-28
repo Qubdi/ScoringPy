@@ -1,400 +1,434 @@
-<h1 align="center">ScoringPy</h1>
+# ScoringPy
 
+**Overview**  
+ScoringPy is an open-source Python library designed to streamline the development and deployment of classical credit scorecards. It simplifies the entire process from data preprocessing to scorecard scaling by providing robust tools and methods that ensure data integrity and model performance. By incorporating multiple layers of data anomaly detection, ScoringPy minimizes errors before model training, enhancing efficiency and reliability.
 
-## Overview
-The ScoringPy is a Python library designed for Classical Credit ScoreCard Deployment.
+The library is divided into three main components:
+1. **Data Preprocessing Pipeline**: Automate and save data manipulation steps using pipelines, ensuring consistency and efficiency when validating models or testing new data.
+2. **Feature and Binning Selection**: Perform both automatic and manual feature selection and binning, with comprehensive reports and visualizations based on Weight of Evidence (WoE) analysis.
+3. **Scorecard Deployment and Scaling**: Deploy and scale scorecards with customizable parameters, allowing for precise control over model coefficients and constants.
 
-This library is divided into three main parts:
-data preprocessing by pipline,
-feature and binning selection (automatically and manual),
-scorecard deployment and scaling.
-
-with this library data processing is more efficient, error rate is minimal 
-because we use several layer of protection to find data anomaly before train model
-
-
+By using ScoringPy, you can build robust credit scoring models with ease, reduce error rates, and enhance efficiency throughout the credit scoring process.
 
 ## Features
-- **Data Preprocessing with pipline**: crucial for model validation and testing with new data (every data manipulation is saved and ready to use easyly with new data)
-- **Feature selection**: for every feature we have small report which can easily discribe this feature's statistic (based on Woe Analisys).
-- **binning**: Classical scoring need to bin continius features, for better inmplementation, with this library we have 2 option manual and 
-Automatic (sagestion) binning, aslo we have binning Validation in feature statistic report (it checks if some data is out of bin ranges).
-- **Final Data Transformation**: it is second layer of protection for outlaierd data, (if some data is outlier which was not in feature bining code give us allret about it)
-- **Scorcard Deploiment**: it is scoring scaling based on model it's coefitinet and constants is 100% customizable (it default values is sppet spot of most scaling cases).
-- **Performace Testing**: with  all thids features it is very easy to test scorecard performace for other population (data)
-- **Monitoring**: it is very easy to track scorecard/population performace becaose or piplines
-
-
-
-
-
-
+- **Data Preprocessing with Pipeline**: Automate and save every data manipulation step using a pipeline, which can be easily reapplied to new data. This ensures consistent preprocessing and reduces the likelihood of errors.
+- **Feature Selection with WoE Analysis**: Generate detailed reports and visualizations for each feature based on WoE and Information Value (IV). This includes statistical summaries that help in understanding the predictive power of each feature.
+- **Binning (Manual and Automatic)**: Bin continuous features for classical scoring models. Choose between manual binning or automatic suggestions provided by the library. Binning validation is included in the feature statistics report, checking if any data falls outside bin ranges.
+- **Final Data Transformation**: Apply a second layer of protection against outlier data. The library alerts you if any data points fall outside the defined bin ranges during transformation.
+- **Scorecard Deployment and Scaling**: Scale scores based on the model's coefficients and constants. The scaling is fully customizable, with default values optimized for most scaling scenarios.
+- **Performance Testing**: Easily test the scorecard's performance on different data populations using the preprocessing pipelines.
+- **Monitoring**: Track scorecard and population performance over time, leveraging the consistent preprocessing steps provided by the pipelines.
 
 ## Installation
 
-The ScoringPy library can be installed using either `pip` or `conda`. Below are the instructions for both methods:
+You can install ScoringPy using either `pip` or `conda`.
 
-To install the ScoringPy via `pip`, use the following command:
+### Using pip
 
 ```bash
 pip install ScoringPy
 ```
 
-To install the ScoringPy via `conda`, use the following command:
+### Using conda
 
 ```bash
 conda install -c conda-forge ScoringPy
-``` 
-
-
-
-
+```
 
 ## Usage
 
+ScoringPy provides several modules, each designed for a specific part of the credit scoring process:
 
-- **`Processing`**: Designed for Data Preprocesing.
-- **`WoeAnalysis`**: Designed for Feature and binning Selection.
-- **`WoeBinning`**: Designed for data Transformation based on Feature and binning Selection.
-- **`CreditScoring`**: Designed for scaling scoring and probabilities based on model and some constant parameters.
+- **Processing**: For data preprocessing.
+- **WoeAnalysis**: For feature selection and binning using WoE analysis.
+- **WoeBinning**: For transforming data based on the selected features and bins.
+- **CreditScoring**: For scaling scores and probabilities based on the model and scaling constants.
 
+Below are detailed explanations and examples for each module.
 
 ### Processing
-Type 1:
+The **Processing** module automates data preprocessing steps using pipelines. Every transformation is saved and can be easily reapplied to new data, which is crucial for model validation and testing.
+
+#### Pipeline Initialization
+To create a processing pipeline, initialize it using the `Processing` class. You can enable or disable automatic data flow between steps using the `flow` parameter.
+
+- **flow** (optional, default `True`): If `True`, the output from each function (step) will be passed as input to the next function automatically. If `False`, you must manage data flow manually.
+
+#### Type 1: Sequential Data Transformation with Automatic Flow
+In this example, we'll create a pipeline with automatic data flow between steps:
+
 ```python
-# Importing necessary modules
 from ScoringPy import Processing
 import pandas as pd
 import dill
 
-
-# Initializing the processing pipeline using the Processing class from the imported module.
-# Setting 'flow=True' means that the output from each function (step) will be passed as input to the next function.
-# This allows transformations to be applied sequentially, one step after another, without needing manual intervention.
-# The flow won't run immediately on initialization, allowing flexibility to add steps first.
+# Initialize the pipeline with flow control enabled
 pipeline = Processing(flow=True)
 
-# Function that defines step 1 of the pipeline
-def step_1(data):
-  data['Age'] = data['Age'].fillna(data['Age'].mean())  
-  return data
+# Define preprocessing functions
+def fill_missing_age(data):
+    """Fill missing values in the 'Age' column with the mean."""
+    data['Age'] = data['Age'].fillna(data['Age'].mean())
+    return data
 
-# Function that defines step 2 of the pipeline
-def step_2(data):
-  data['Age'] = data['Age'] * 2  
-  return data
+def double_age(data):
+    """Double the values in the 'Age' column."""
+    data['Age'] = data['Age'] * 2
+    return data
 
-# Function that defines step 3 of the pipeline
-def step_3(data):
-  data['Age'] = data['Age'] / 5  
-  return data
+def scale_age(data):
+    """Scale the 'Age' column by dividing by 5."""
+    data['Age'] = data['Age'] / 5
+    return data
 
-# Adding step 1 to the processing pipeline.
-# The pipeline will now execute step_1 as the first transformation when run.
-pipeline.add_step(step_1)
+# Add steps to the pipeline
+pipeline.add_step(fill_missing_age)
+pipeline.add_step(double_age)
+pipeline.add_step(scale_age)
 
-# Adding step 2 to the processing pipeline.
-# The pipeline will execute step_2 after step_1 when the pipeline is run.
-pipeline.add_step(step_2)
+# Save the pipeline using dill
+with open('pipeline.pkl', 'wb') as file:
+    dill.dump(pipeline, file)
 
-# Adding step 3 to the processing pipeline.
-# The pipeline will execute step_3 after step_2 when the pipeline is run.
-pipeline.add_step(step_3)
+# Load your dataset
+df = pd.read_csv('data.csv')
 
-# Saving the configured pipeline (with the steps added) to a file.
-# This allows for reusability of the pipeline without reconfiguring it each time.
-# The file is saved using the 'dill' library, which can serialize complex Python objects like classes and functions.
-with open('Pipeline.pkl', 'wb') as file:
-  dill.dump(pipeline, file)
+# Run the pipeline on the dataset
+df_processed = pipeline.run(initial_data=df)
 
-# Running the pipeline on the initial data (the 'df' DataFrame created earlier).
-df = pipeline.run(initial_data = df)
-
-# Clearing the pipeline
-# The pipeline object is cleared, meaning all the added steps will be removed.
-# This can be useful if you want to reset the pipeline and add new steps for different transformations.
+# Clear the pipeline if needed
 pipeline.clear()
-
-# After clearing, the pipeline is now empty and ready for new steps if needed.
 ```
 
-Reuse Type 1 Pipline:
+
+### Explanation:
+
+1. **Initialization**: We initialize the `Processing` pipeline with `flow=True`, enabling automatic data flow between steps.
+
+2. **Function Definitions**: We define three functions (`fill_missing_age`, `double_age`, `scale_age`) that perform specific data transformations.
+
+3. **Adding Steps**: We add these functions to the pipeline using `pipeline.add_step()`.
+
+4. **Saving the Pipeline**: We use the `dill` library to serialize and save the pipeline for future reuse.
+
+5. **Running the Pipeline**: We run the pipeline on the dataset using `pipeline.run(initial_data=df)`.
+
+6. **Clearing the Pipeline**: We clear the pipeline using `pipeline.clear()` if we need to reset it.
+
+### Reusing the Pipeline
+You can load the saved pipeline and apply it to new data without redefining the steps:
+
 ```python
-# Step 2: Loading the pipeline for Filling Data
-# This section loads a previously saved pipeline from a file using the 'dill' library.
-# The file 'Pipeline.pkl' contains the serialized version of the pipeline that was configured and saved earlier.
+import dill
+import pandas as pd
 
-with open('Pipeline.pkl', 'rb') as file:
-    pipeline = dill.load(file)  # Loading the previously saved pipeline from the file.
+# Load the saved pipeline
+with open('pipeline.pkl', 'rb') as file:
+    pipeline = dill.load(file)
 
-# The 'pipeline' object is now restored with all the previously added steps (step_1, step_2, and step_3).
-# These steps will be executed in sequence when the pipeline is run with the new input data.
+# Load new data
+df_new = pd.read_csv('new_data.csv')
 
-# Executing the pipeline with the DataFrame 'df', which was produced as a result of the first pipeline execution.
-# The input DataFrame 'df' contains transformations done by the earlier pipeline execution.
-# Here, we pass it through the same pipeline to reapply the same transformations, or to continue processing based on current data.
+# Run the pipeline on the new data
+df_processed_new = pipeline.run(initial_data=df_new)
 
-df = pipeline.run(initial_data=df)  # Running the pipeline on the current DataFrame.
-
-# Clearing the pipeline
-# The pipeline object is cleared, meaning all the added steps will be removed.
-# This can be useful if you want to reset the pipeline and add new steps for different transformations.
+# Clear the pipeline if needed
 pipeline.clear()
-
-# At this point, the 'pipeline' object is empty, and no steps are available for execution until new steps are added.
-
 ```
 
-Type 2:
+### Type 2: Non-Sequential Data Processing with Manual Flow
+If you need more control over the data flow between steps, you can set `flow=False` when initializing the pipeline.
+
 ```python
-# Importing necessary modules
 from ScoringPy import Processing
 import pandas as pd
 import dill
 
-# The file path for the first Excel file.
-row_path = 'Data/step1.xlsx'
-
-# Initializing the processing pipeline without running the flow immediately.
-# Setting flow=False means that the steps in the pipeline will not automatically pass data between them.
-# You will control the flow manually and decide when to pass data to subsequent steps.
+# Initialize the pipeline without automatic flow
 pipeline = Processing(flow=False)
 
-# Step 1: Load data from an Excel file (provided as 'path').
-def step_1(path=None):
-  data = pd.read_excel(path)  
-  return data
+# Define functions for each step
+def load_data_step1(path=None):
+    """Load data from an Excel file."""
+    data = pd.read_excel(path)
+    return data
 
-# Step 2: Load a different dataset from another Excel file ('Data/step2.xlsx').
-def step_2():
-  data = pd.read_excel('Data/step2.xlsx')  
-  return data
+def load_data_step2():
+    """Load additional data from another Excel file."""
+    data = pd.read_excel('Data/step2.xlsx')
+    return data
 
-# Step 3: Concatenate the results from step 1 and step 2.
-# It retrieves the data from the context (stored results from previous steps).
-def step_3():
-  step_1_data = pipeline.context.get('step_1')  # Retrieving the result of step 1 from the pipeline context.
-  step_2_data = pipeline.context.get('step_2')  # Retrieving the result of step 2 from the pipeline context.
+def concatenate_data():
+    """Concatenate data from step 1 and step 2."""
+    step1_data = pipeline.context.get('load_data_step1')
+    step2_data = pipeline.context.get('load_data_step2')
+    data = pd.concat([step1_data, step2_data], ignore_index=True)
+    data['Age'] = data['Age'] * 2
+    return data
 
-  # Concatenating the two DataFrames from step 1 and step 2.
-  data = pd.concat([step_1_data, step_2_data], ignore_index=True)
+def finalize_data(data):
+    """Finalize the data by scaling the 'Age' column."""
+    data['Age'] = data['Age'] / 5
+    return data
 
-  data['Age'] = data['Age'] * 2  
-  return data
+# Add steps to the pipeline
+pipeline.add_step(load_data_step1, path='Data/step1.xlsx')
+pipeline.add_step(load_data_step2)
+pipeline.add_step(concatenate_data, flow=True)
+pipeline.add_step(finalize_data, flow=True)
 
-# Step 4: Further transformation of the data by dividing the 'Age' column by 5.
-def step_4(data):
-  data['Age'] = data['Age'] / 5 
-  return data
+# Save the pipeline
+with open('pipeline.pkl', 'wb') as file:
+    dill.dump(pipeline, file)
 
+# Run the pipeline
+df_processed = pipeline.run()
 
-# Adding the steps to the pipeline
-# Each step is added sequentially, and the corresponding function is passed as an argument.
-# If the function requires parameters (e.g., step 1), the parameters are provided when adding the step.
-
-# Step 1: Reading data from the Excel file located at 'row_path'.
-pipeline.add_step(step_1, row_path)
-
-# Step 2: Reading data from 'Data/step2.xlsx' file.
-pipeline.add_step(step_2)
-
-# Step 3: Concatenating the data from steps 1 and 2.
-# flow=True ensures that the output from step 3 will automatically be passed to step 4.
-pipeline.add_step(step_3, flow=True)
-
-# Step 4: Applying further transformations to the data, with flow=True.
-# Here, flow=True ensures that the output from step 3 will be passed to step 4 in our case saved into variable automatically.
-pipeline.add_step(step_4, flow=True)
-
-# Saving the configured pipeline to a file for reuse in the future.
-# The 'dill' library is used to serialize the pipeline object.
-with open('Pipeline.pkl', 'wb') as file:
-  dill.dump(pipeline, file)
-
-# Running the pipeline
-# The pipeline is executed, and it flows through all the steps in sequence:
-# Step 1 (data loading), Step 2 (additional data loading), Step 3 (data concatenation and transformation),
-# and Step 4 (final transformation). The output from each step is automatically passed to the next step when flow=True.
-df = pipeline.run()
-
-# Clearing the pipeline
-# The pipeline object is cleared, meaning all the added steps will be removed.
-# This can be useful if you want to reset the pipeline and add new steps for different transformations.
+# Clear the pipeline if needed
 pipeline.clear()
-
-# After clearing, the pipeline is now empty and ready for new steps if needed.
 ```
 
-Reuse Type 2 Pipline:
+### Explanation:
+
+1. **Initialization**: We initialize the `Processing` pipeline with `flow=False`, disabling automatic data flow.
+
+2. **Function Definitions**: We define functions for loading data and concatenating datasets.
+
+3. **Using `pipeline.context`**: We use `pipeline.context.get()` to retrieve data from previous steps.
+
+4. **Flow Control**: We set `flow=True` for steps where we want the output to be passed to the next step.
+
+### Reusing the Pipeline
+
 ```python
-# Step 2: Loading the pipeline for processing data.
-# The 'Pipeline.pkl' file contains the saved pipeline object, which was serialized using the 'dill' library.
-# This pipeline has multiple steps that were configured earlier for data transformation.
-# We load the pipeline to reuse it without needing to redefine or reconfigure it.
+import dill
 
-with open('Pipeline.pkl', 'rb') as file:
-  pipeline = dill.load(file)  # Loading the previously saved pipeline from the file using 'dill'.
+# Load the pipeline
+with open('pipeline.pkl', 'rb') as file:
+    pipeline = dill.load(file)
 
-# After loading, the pipeline is restored with all the previously added steps.
-# These steps can now be executed in sequence as they were originally configured.
+# Run the pipeline
+df_processed = pipeline.run()
 
-# Executing the pipeline.
-# The pipeline's 'run()' method is called to execute all the steps in the pipeline.
-# Since the pipeline was configured with 'flow=True' for certain steps, data will automatically be passed from one step to the next.
-# The steps will process the data according to the logic defined in each function (e.g., data loading, concatenation, transformation).
-df = pipeline.run()
-
-# At this point, the 'df' DataFrame will contain the final result after all transformations are applied by the pipeline.
-
-# Clearing the pipeline.
-# The 'clear()' method removes all the steps and clears the context of the pipeline.
-# This is useful if you want to reset the pipeline to a clean state before re-adding steps or reconfiguring it.
+# Clear the pipeline if needed
 pipeline.clear()
-
-# After clearing, the pipeline is now empty and ready for new steps if needed.
 
 ```
 
-Processing Optional Arguments
-- **`flow`**: `True` (default)
-  - **Type**: Boolean
-  - **Description**: Setting flow=False means that the steps in the pipeline will not automatically pass data between them,
-    Setting 'flow=True' means that the output from each function (step) will be passed as input to the next function.
+### Processing Optional Arguments
 
+- **flow** (`bool`, default `True`): Controls automatic data flow between steps. If set to `False`, you must manage the data flow manually.
 
+## WoeAnalysis
 
-### WoeAnalysis
+The **WoeAnalysis** module is designed for feature selection and binning using WoE (Weight of Evidence) analysis. It provides small reports for each feature, including statistical summaries based on WoE analysis.
 
-WoeAnalysis's have 2 main method `discrete` and `continuous` each of them have 
-ther own method `plot` and `save`,
-`plot` method stands for visualize Woe and Iv analysis and `save` stands for to save report if it nesesery
+### Methods
 
-use Cases for `discrete`:
+- **discrete**: Analyze discrete (categorical) variables.
+- **continuous**: Analyze continuous variables.
+
+Each method supports:
+
+- **plot**: Visualizes WoE and IV analysis.
+- **report**: Displays and optionally saves the report.
+
+### Analyzing Discrete Variables
+
 ```python
 from ScoringPy import WoeAnalysis
-import pandas as pd
-import numpy as np
 
+# Initialize WoeAnalysis
+woe_analysis = WoeAnalysis(save=False, path="Data/", type=2)
 
-# intialising WoeAnalysis class
-woe_analysis = WoeAnalysis(save=False,path="Data/", type=2)
-
-
-# default is: safety=True, threshold=300
-# safty is built in feature which refuse to make
-# feature if it is not contius and contain more then
-# 300 uniqeu values it is alseo cosumaisable by user
+# Analyze a discrete variable with safety checks
 woe_analysis.discrete(column="MaritalStatus", df=X_train, target=y_train, safety=True, threshold=300).report()
 ```
 
-```python
-# it will plot Woe and IV and aslo show report
-# Report method must be last one in every case 
-woe_analysis.discrete(column="MaritalStatus", df=X_train, target=y_train).plot(rotation=0).report()
-```
+### Explanation:
+
+1. **Initialization**: We initialize `WoeAnalysis` with optional parameters like `save`, `path`, and `type`.
+
+2. **Safety Parameters**:
+    - **safety** (`bool`, default `True`): Controls whether to perform safety checks on the feature before processing. If `True`, the method will refuse to process a feature if it contains more unique values than the specified threshold, preventing potential memory shortages or hardware crashes.
+    - **threshold** (`int`, default `300`): Specifies the maximum number of unique values allowed in a discrete feature when `safety` is `True`. If the feature exceeds this threshold, it will not be processed until the user changes the threshold or turns off safety.
+
+3. **Analyzing the Variable**: We call the `discrete` method, passing the column name, DataFrame `X_train`, target variable `y_train`, and safety parameters.
+
+4. **Generating the Report**: We call the `report` method to display the analysis.
+
+### Plotting and Saving the Report:
 
 ```python
-# have several paraeters path=path, name=name, format=file_format, type=type
-# it will plot Woe and IV and aslo show report as well as show report
-# Report method must be last one in every case 
-woe_analysis.discrete(column="MaritalStatus", df=X_train, target=y_train).report(save=True, type=1)
-```
+# Generate a plot and display the report
+woe_analysis.discrete(column="MaritalStatus", df=X_train, target=y_train, safety=True, threshold=300).plot(rotation=0).report()
 
-use Cases for `continuous`:
-```python
-bins = pd.IntervalIndex.from_tuples([(-1,0),(0, 0.2), (0.2,0.35), (0.35, 0.45),(0.45, 0.55), (0.55, 0.65),(0.65, np.inf)])
-woe_analysis.continuous(column="RefinanceRate", bins= bins,df=X_train, target=y_train).report()
-```
-
-```python
-# it will plot Woe and IV and aslo show report
-# Report method must be last one in every case 
-bins = pd.IntervalIndex.from_tuples([(-1,0),(0, 0.2), (0.2,0.35), (0.35, 0.45),(0.45, 0.55), (0.55, 0.65),(0.65, np.inf)])
-woe_analysis.continuous(column="RefinanceRate", bins= bins,df=X_train, target=y_train).plot(rotation=90).report()
+# Save the report
+woe_analysis.discrete(column="MaritalStatus", df=X_train, target=y_train, safety=True, threshold=300).report(save=True, type=1)
 
 ```
 
+- **rotation**: Adjusts the rotation of x-axis labels in the plot.
+- **save**: If `True`, saves the report.
+- **type**: Specifies the format type when saving.
+
+### Analyzing Continuous Variables
+For continuous variables, you need to define bins.
+
 ```python
-# have several paraeters path=path, name=name, format=file_format, type=type
-# it will plot Woe and IV and aslo show report as well as show report
-# Report method must be last one in every case 
-bins = pd.IntervalIndex.from_tuples([(-1,0),(0, 0.2), (0.2,0.35), (0.35, 0.45),(0.45, 0.55), (0.55, 0.65),(0.65, np.inf)])
-woe_analysis.continuous(column="RefinanceRate", bins= bins,df=X_train, target=y_train).report(save=True)
+import numpy as np
+import pandas as pd
+from ScoringPy import WoeAnalysis
+
+# Define bins using pandas IntervalIndex
+bins = pd.IntervalIndex.from_tuples([
+(-1, 0),(0, 0.2),(0.2, 0.35),(0.35, 0.45),(0.45, 0.55),(0.55, 0.65),(0.65, np.inf)])
+
+# Analyze a continuous variable
+woe_analysis.continuous(column="RefinanceRate", bins=bins, df=X_train, target=y_train).report()
+
+# Plot and display the report
+woe_analysis.continuous(column="RefinanceRate", bins=bins, df=X_train, target=y_train).plot(rotation=90).report()
+
+# Save the report
+woe_analysis.continuous(column="RefinanceRate", bins=bins, df=X_train, target=y_train).report(save=True)
+
 ```
 
-also we can take maximum iformation from class, for future usage
+### Additional Attributes
+
+You can extract various attributes from the `woe_analysis` object for future use:
+
 ```python
-WoE_dict = woe_analysis.WoE_dict
-Variable_types = woe_analysis.Variable_types
-Variable_Ranges = woe_analysis.Variable_Ranges
-IV_excel = woe_analysis.IV_excel
-IV_dict = woe_analysis.IV_dict
+WoE_dict = woe_analysis.WoE_dict           # Dictionary of WoE values
+Variable_types = woe_analysis.Variable_types  # Types of variables analyzed
+Variable_Ranges = woe_analysis.Variable_Ranges  # Ranges or bins used
+IV_excel = woe_analysis.IV_excel           # IV values formatted for Excel
+IV_dict = woe_analysis.IV_dict             # Dictionary of IV values
 ```
 
+## WoeBinning
 
-### WoeBinning
+The `WoeBinning` module transforms your dataset based on the WoE analysis conducted earlier. It replaces the original feature values with their corresponding WoE values.
 
 ```python
-# it transsform data based on WoE_dict, 
-# and retun data with only column which is in WoE_dict
-# if you dont want to transform data with whole WoE_dict,
-# remove some features from WoE_dict and give WoeBinning 
 from ScoringPy import WoeBinning
 
+# Assume WoE_dict is obtained from WoeAnalysis
 WoE_dict = woe_analysis.WoE_dict
 
-# Production is paramter which is booleran and
-# if it Is False it gives us error if some row's contain outlaier
-# and if it is True it didnr rize error just remove specific 
-# row from data and continiu tranforamtion
-woe_transform = WoeBinning(WoE_dict= WoE_dict, Production=False)
+# Initialize WoeBinning
+woe_transform = WoeBinning(WoE_dict=WoE_dict, production=False)
 
-# transform have one optional parameter dummpy 
-# if it True it will return data with columns which comes from WoE_dict
-# if it is False it just change values and dont change columns
-X_transformed = woe_transform.transform(X,dummy=False)
+# Transform the data
+X_transformed = woe_transform.transform(X, dummy=False)
+
 ```
 
+## Parameters:
 
-### CreditScoring
+- **WoE_dict**: The dictionary containing WoE values.
+- **production** (`bool`, default `False`): Controls error handling for outliers.
+    - If `False`, the transformer raises an error if it encounters outlier data not covered by the bins, allowing you to address data issues during development.
+    - If `True`, it handles outliers by removing specific rows containing outliers and continues the transformation, which is suitable for production environments where interruptions are undesirable.
+- **dummy** (`bool`, default `False`): Controls the structure of the output DataFrame.
+    - If `True`, returns data with new columns derived from the WoE dictionary.
+    - If `False`, transforms existing columns without changing the DataFrame's structure.
 
+### Explanation:
+
+1. **Transformation**: The transformed data will include only the columns specified in `WoE_dict`.
+
+2. **Selective Transformation**: If you want to transform only specific features, remove unwanted features from `WoE_dict` before transformation.
+
+## CreditScoring
+
+The **CreditScoring** module scales scores and probabilities based on your logistic regression model and specific scaling constants. It allows you to generate a scorecard and apply it to your dataset.
+
+### Steps
+
+1. **Train a Logistic Regression Model**: Use the transformed data to train your model.
+2. **Initialize CreditScoring**: Provide the data, model, WoE dictionary, and production mode.
+3. **Apply Scoring**: Generate the scorecard and apply it to your data.
+
+### Example
 
 ```python
-# it transsform data based on WoE_dict, 
-# and retun data with only column which is in WoE_dict
-# if you dont want to transform data with whole WoE_dict,
-# remove some features from WoE_dict and give WoeBinning 
 from sklearn.linear_model import LogisticRegression
-from ScoringPy import WoeBinning
 from ScoringPy import CreditScoring
 
+# Assume X_transformed is your WoE-transformed data
+# Assume y is your target variable
 
-WoE_dict = woe_analysis.WoE_dict
+# Train the logistic regression model
+model = LogisticRegression(max_iter=1000, class_weight='balanced', C=0.1)
 
-# Production is paramter which is booleran and
-# if it Is False it gives us error if some row's contain outlaier
-# and if it is True it didnr rize error just remove specific 
-# row from data and continiu tranforamtion
-woe_transform = WoeBinning(WoE_dict= WoE_dict, Production=False)
+# Initialize CreditScoring
+scoring = CreditScoring(data=X_train, model=model, WoE_dict=WoE_dict, production=True)
 
-# transform have one optional parameter dummpy 
-# if it True it will return data with columns which comes from WoE_dict
-# if it is False it just change values and dont change columns
-X_transformed = woe_transform.transform(X,dummy=False)
+# Apply scoring to the data
+result = scoring.apply(X_train)
 
-# creating a Logistic Regression model with specified parameters
-model = LogisticRegression(max_iter=1_000, class_weight='balanced', C=0.1)
+# Access the scored data and scorecard
+df_scored = result.data
+scorecard = result.scorecard
 
-
-# Example usage
-scoring = CreditScoring(data=df, model=model, WoE_dict=WoE_dict, production=True)
-
-# scaling scores for df
-temp_df = scoring.apply(df)
-
-# take data from scaling result 
-df = temp_df.data
-
-# take scorecard based on model
-scorecard = temp_df.scorecard
 ```
+
+### Parameters:
+
+- **data**: The dataset to score.
+- **model**: The trained logistic regression model.
+- **WoE_dict**: The WoE dictionary used for transformations.
+- **production** (`bool`, default `True`): Controls error handling for outliers during scoring.
+    - If `False`, the process will raise an error if it encounters data issues, suitable for development and debugging.
+    - If `True`, it will handle outliers gracefully, making it suitable for production environments.
+
+### Explanation:
+
+1. **Scorecard Generation**: The `apply_scoring` method generates a scorecard based on the model's coefficients and constants.
+
+2. **Scored Data**: The resulting `df_scored` DataFrame includes the calculated scores for each record.
+
+
+## Performance Testing and Monitoring
+
+By reusing the preprocessing pipeline and WoE transformations, you can ensure consistency in data preparation. This allows for accurate performance comparisons across different data populations, facilitating performance testing and monitoring over time.
+
+## Best Practices and Detailed Explanations
+
+### Data Preprocessing Pipeline
+
+- **Consistency**: Saving and reusing pipelines ensures that the same data transformations are applied consistently across training and new data.
+- **Flow Control**: Decide between automatic and manual flow based on the complexity of your data transformations.
+- **Serialization**: Use `dill` for serializing the pipeline, which can handle complex objects like custom functions and classes.
+
+### WoE Analysis and Binning
+
+- **Safety Checks**: Use parameters like `safety` and `threshold` to prevent creating features with too many unique values or inappropriate data types.
+    - **safety** (`bool`, default `True`): If `True`, the method performs a safety check on the feature before processing, designed to prevent hardware crashes due to memory shortages when dealing with high-cardinality features.
+    - **threshold** (`int`, default `300`): Specifies the maximum number of unique values allowed in a discrete feature when `safety` is `True`. If the feature exceeds this threshold, it will not be processed unless you either increase the threshold or set `safety=False`.
+- **Handling High Cardinality**: High-cardinality features can cause performance issues. The `safety` parameter helps prevent such issues by limiting the number of unique values.
+- **Manual vs. Automatic Binning**: Choose manual binning for more control, or use automatic suggestions provided by the library.
+- **Outlier Handling**: Use binning validation reports to adjust bins as necessary, ensuring that data falls within defined ranges.
+
+### Data Transformation with WoeBinning
+
+- **Selective Transformation**: Modify `WoE_dict` to include only the features you want to transform.
+- **Production Mode**:
+    - **Development Environment**: Set `production=False` to raise errors when outliers are encountered, allowing you to identify and fix data issues.
+    - **Production Environment**: Set `production=True` to handle outliers gracefully by removing affected rows, ensuring uninterrupted processing.
+
+### Credit Score Scaling
+
+- **Customization**: Adjust scaling constants and parameters to fit your specific use case or regulatory requirements.
+- **Scorecard Generation**: Use the generated scorecard to understand how scores are computed and for transparency in decision-making.
+- **Monitoring**: Regularly test and monitor the scorecard's performance on new data to ensure it remains predictive.
+
+## Conclusion
+
+ScoringPy provides a comprehensive toolkit for building classical credit scorecards, from data preprocessing to score scaling. By automating and standardizing key steps in the credit scoring process, it helps reduce errors, improve efficiency, and ensure consistency across different datasets. With features like safety checks and production modes, it is designed to handle both development and production environments effectively.
+
+## Contribution and Support
+
+As an open-source project, contributions are welcome. If you encounter any issues or have suggestions for improvements, feel free to submit issues or pull requests on the GitHub repository.
