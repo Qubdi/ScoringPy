@@ -4,7 +4,7 @@ Installation
 Python Version Support
 ######################
 
-We recommend using the latest version of Python. **Timeline Manager** is tested on:
+We recommend using the latest version of Python. **ScoringPy** is tested on:
 
 - Python 3.7
 - Python 3.8

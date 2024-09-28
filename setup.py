@@ -1,9 +1,13 @@
 from setuptools import setup, find_packages
 
+# python setup.py sdist bdist_wheel
+# pip install dist/ScoringPy-0.0.2.tar.gz
+# pip install dist/ScoringPy-0.0.2-py3-none-any.whl
+# pip install --force-reinstall dist/ScoringPy-0.0.2-py3-none-any.whl
 
 setup(
     name="ScoringPy",  # The name of your package
-    version="0.0.1",  # The version of your package
+    version="0.0.2",  # The version of your package
     author="Anri Tvalabeishvili, Kristine Dzneladze, Ruso Kvesitadze",  # Your name or organization
     author_email="anri.tvalabeishvili@gmail.com",  # Your contact email
     description="A job scheduling library that supports various time intervals",  # A short description of your package

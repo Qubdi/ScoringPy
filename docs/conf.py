@@ -12,9 +12,9 @@ sys.path.insert(0, os.path.abspath('../'))  # Adjust the path as needed
 
 # -- Project information -----------------------------------------------------
 
-project = 'Timeline Manager'
-copyright = '2024, Anri Tvalabeishvili'
-author = 'Anri Tvalabeishvili'
+project = 'ScoringPy'
+copyright = '2024, Qubdi'
+author = 'Qubdi'
 
 # The full version, including alpha/beta/rc tags
 release = '1.0.0'
