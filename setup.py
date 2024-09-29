@@ -7,12 +7,9 @@ from setuptools import setup, find_packages
 # twine upload dist/*
 
 
-# pypi-8AgEIcHlwaS5vcmcCJDU4YTNiZTEwLTVhZWMtNDc1Ny1hOGIzLTQ5NDA0Nzk3MGNjMgACEVsxLFsic2NvcmluZ3B5Il1dAAIsWzIsWyI1NGFkNTY4OS03ZTUwLTQwZDQtYTk4Ni1kZjFlODU2MzI2ODUiXV0AAAYgP1mvQfNXvXk7116Ctbp96H8S9xieeB8sHxeqqQzve3c
-
-
 setup(
     name="ScoringPy",  # The name of your package
-    version="1.0.1",  # The version of your package
+    version="1.0.4",  # The version of your package
     author="Anri Tvalabeishvili, Kristine Dzneladze",  # Your name or organization
     author_email="QubdiSolutions@gmail.com",  # Your contact email
     description="ScoringPy is an open-source Python library designed to streamline the development and deployment of classical credit scorecards.",  # A short description of your package
