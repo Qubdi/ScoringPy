@@ -353,13 +353,13 @@ class WoeAnalysis:
         # Calculating WOE (Weight of Evidence) for the binned feature
         df_temp = self.__woe(df=df_temp, column_name=column, target_df=target, type="discrete")
 
-        self.WoE_dict = {k: v for k, v in self.WoE_dict.items() if f"{column}" not in k}
+        self.WoE_dict = {k: v for k, v in self.WoE_dict.items() if f"{column}" != k}
 
         # Saving the Woe values in a dictionary for each bin of the feature
         for i, row in df_temp.iterrows():
             self.WoE_dict[f'{column}:' + str(row[column])] = row['Woe']
 
-        self.IV_dict = {k: v for k, v in self.IV_dict.items() if f"{column}" not in k}
+        self.IV_dict = {k: v for k, v in self.IV_dict.items() if f"{column}" != k}
 
         # Calculating and storing the Information Value (IV) of the feature
         self.IV_dict[column] = df_temp['IV'].values[0]
@@ -428,12 +428,12 @@ class WoeAnalysis:
         # calculating WOE (Weight of Evidence) for the binned feature
         df_temp = self.__woe(df=df_temp, column_name=f'{column}_factor', target_df=target, type="continuous")
 
-        self.WoE_dict = {k: v for k, v in self.WoE_dict.items() if f"{column}" not in k}
+        self.WoE_dict = {k: v for k, v in self.WoE_dict.items() if f"{column}" != k}
 
         for i, row in df_temp.iterrows():
             self.WoE_dict[f'{column}:' + str(row[f'{column}_factor'])] = row['Woe']
 
-        self.IV_dict = {k: v for k, v in self.IV_dict.items() if f"{column}" not in k}
+        self.IV_dict = {k: v for k, v in self.IV_dict.items() if f"{column}" != k}
 
         # calculating and storing the Information Value (IV) of the feature
         self.IV_dict[column] = df_temp['IV'].values[0]
