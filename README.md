@@ -10,6 +10,40 @@ The library is divided into three main components:
 
 By using ScoringPy, you can build robust credit scoring models with ease, reduce error rates, and enhance efficiency throughout the credit scoring process.
 
+# Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+  - [Using pip](#using-pip)
+  - [Using conda](#using-conda)
+- [Usage](#usage)
+  - [Processing](#processing)
+    - [Pipeline Initialization](#pipeline-initialization)
+      - [Type 1: Sequential Data Transformation with Automatic Flow](#type-1-sequential-data-transformation-with-automatic-flow)
+      - [Type 1: Reusing the Pipeline](#type-1-reusing-the-pipeline)
+      - [Type 2: Non-Sequential Data Processing with Manual Flow](#type-2-non-sequential-data-processing-with-manual-flow)
+      - [Type 2: Reusing the Pipeline](#type-2-reusing-the-pipeline)
+      - [Processing Optional Arguments](#processing-optional-arguments)
+  - [WoeAnalysis](#woeanalysis)
+    - [Methods](#methods)
+      - [Analyzing Discrete Variables](#analyzing-discrete-variables)
+      - [Analyzing Continuous Variables](#analyzing-continuous-variables)
+    - [Additional Attributes](#additional-attributes)
+  - [WoeBinning](#woebinning)
+  - [CreditScoring](#creditscoring)
+    - [Steps](#steps)
+    - [Example](#example)
+  - [Performance Testing and Monitoring](#performance-testing-and-monitoring)
+- [Best Practices and Detailed Explanations](#best-practices-and-detailed-explanations)
+  - [Data Preprocessing Pipeline](#data-preprocessing-pipeline)
+  - [WoE Analysis and Binning](#woe-analysis-and-binning)
+  - [Data Transformation with WoeBinning](#data-transformation-with-woebinning)
+  - [Credit Score Scaling](#credit-score-scaling)
+- [Conclusion](#conclusion)
+- [Contribution and Support](#contribution-and-support)
+
+
+
 ## Features
 - **Data Preprocessing with Pipeline**: Automate and save every data manipulation step using a pipeline, which can be easily reapplied to new data. This ensures consistent preprocessing and reduces the likelihood of errors.
 - **Feature Selection with WoE Analysis**: Generate detailed reports and visualizations for each feature based on WoE and Information Value (IV). This includes statistical summaries that help in understanding the predictive power of each feature.
@@ -115,7 +149,7 @@ pipeline.clear()
 
 6. **Clearing the Pipeline**: We clear the pipeline using `pipeline.clear()` if we need to reset it.
 
-### Reusing the Pipeline
+### Type 1: Reusing the Pipeline
 You can load the saved pipeline and apply it to new data without redefining the steps:
 
 ```python
@@ -136,7 +170,7 @@ df_processed_new = pipeline.run(initial_data=df_new)
 pipeline.clear()
 ```
 
-### Type 2: Non-Sequential Data Processing with Manual Flow
+#### Type 2: Non-Sequential Data Processing with Manual Flow
 If you need more control over the data flow between steps, you can set `flow=False` when initializing the pipeline.
 
 ```python
@@ -198,7 +232,7 @@ pipeline.clear()
 
 4. **Flow Control**: We set `flow=True` for steps where we want the output to be passed to the next step.
 
-### Reusing the Pipeline
+### Type 2: Reusing the Pipeline
 
 ```python
 import dill

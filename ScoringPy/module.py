@@ -353,13 +353,13 @@ class WoeAnalysis:
         # Calculating WOE (Weight of Evidence) for the binned feature
         df_temp = self.__woe(df=df_temp, column_name=column, target_df=target, type="discrete")
 
-        self.WoE_dict = {k: v for k, v in self.WoE_dict.items() if f"{column}" not in k}
+        self.WoE_dict = {k: v for k, v in self.WoE_dict.items() if f"{column}" != k}
 
         # Saving the Woe values in a dictionary for each bin of the feature
         for i, row in df_temp.iterrows():
             self.WoE_dict[f'{column}:' + str(row[column])] = row['Woe']
 
-        self.IV_dict = {k: v for k, v in self.IV_dict.items() if f"{column}" not in k}
+        self.IV_dict = {k: v for k, v in self.IV_dict.items() if f"{column}" != k}
 
         # Calculating and storing the Information Value (IV) of the feature
         self.IV_dict[column] = df_temp['IV'].values[0]
@@ -428,12 +428,12 @@ class WoeAnalysis:
         # calculating WOE (Weight of Evidence) for the binned feature
         df_temp = self.__woe(df=df_temp, column_name=f'{column}_factor', target_df=target, type="continuous")
 
-        self.WoE_dict = {k: v for k, v in self.WoE_dict.items() if f"{column}" not in k}
+        self.WoE_dict = {k: v for k, v in self.WoE_dict.items() if f"{column}" != k}
 
         for i, row in df_temp.iterrows():
             self.WoE_dict[f'{column}:' + str(row[f'{column}_factor'])] = row['Woe']
 
-        self.IV_dict = {k: v for k, v in self.IV_dict.items() if f"{column}" not in k}
+        self.IV_dict = {k: v for k, v in self.IV_dict.items() if f"{column}" != k}
 
         # calculating and storing the Information Value (IV) of the feature
         self.IV_dict[column] = df_temp['IV'].values[0]
@@ -481,6 +481,78 @@ class WoeAnalysis:
         # Return only the DiscretePlotter object
         return DiscretePlotter(self, df_temp)
 
+
+    def auto_binning(self, data, column, n_bins=None, target=None, strategy_option=None):
+        """
+        Automatically bins continuous data using different strategies and performs WoE analysis.
+
+        Parameters:
+        - data (pd.DataFrame): The DataFrame containing the data.
+        - column (str): The name of the column to bin.
+        - n_bins (int, optional): Number of bins to create (if not provided, a range of bins is tried).
+        - target (pd.Series, optional): Target variable for WoE analysis.
+        - strategy_option (str, optional): "quantile" for quantile binning, or choose from "uniform", "quantile", or "kmeans" strategies.
+
+        Returns:
+        - best_result[1] (list of tuples): The best bin intervals as a list of (lower_bound, upper_bound) tuples.
+        """
+
+        # List of possible binning strategies
+        strategies = ["uniform", "quantile"]
+        # Range of bin counts to test if n_bins is not specified
+        all_n_bins = range(2, 30)
+        # Variable to track the best Information Value (IV) obtained
+        best_IV = 0
+
+        # Adjust strategy list if a specific strategy is specified
+        if strategy_option:
+            strategies = [strategy_option]
+
+        # If specific number of bins is provided, overwrite the range of bins
+        if n_bins:
+            all_n_bins = [n_bins]
+
+        # Dictionary to store IV results for each strategy and bin combination
+        all_IV = {}
+
+        # Iterate through each strategy and bin count
+        for strategy in strategies:
+            for n_bins in all_n_bins:
+                # Initialize KBinsDiscretizer for binning
+                kb = KBinsDiscretizer(n_bins=n_bins, encode='ordinal', strategy=strategy)
+
+                # Fit and transform the data, binning the specified column
+                kb.fit_transform(data[[column]])
+                bin_edges = kb.bin_edges_[0]  # Get bin edges for the column
+                bins = pd.IntervalIndex.from_breaks(bin_edges)  # Convert edges to intervals
+
+                # Convert bin edges into a list of tuples (lower_bound, upper_bound)
+                bins_as_tuples = [(bin_edges[i], bin_edges[i + 1]) for i in range(len(bin_edges) - 1)]
+
+                # Perform WoE analysis and retrieve IV
+                analysis_result = self.continuous(column=column, bins=bins, df=data, target=target)
+                information_value = analysis_result.report()["IV"][0]  # Extract IV value
+
+                # Check IV is within acceptable bounds (0 <= IV <= 1.5)
+                if 0 <= information_value <= 1.5:
+                    # Store IV, bins, strategy, and bin count in all_IV dictionary
+                    all_IV[str(information_value)] = [bins, bins_as_tuples, strategy, n_bins]
+
+                    # Update best IV and corresponding bins if this IV is higher
+                    if best_IV < information_value:
+                        best_IV = information_value
+                else:
+                    break  # Stop if IV is outside the acceptable range
+
+        # Retrieve the best binning result based on highest IV
+        best_result = all_IV[str(best_IV)]
+
+        # Perform WoE analysis on best result and plot it
+        analysis_result = self.continuous(column=column, bins=best_result[0], df=data, target=target)
+        analysis_result.plot()  # Customize plot (assumes plot() method exists in the result)
+
+        # Return the best bin intervals as a list of tuples (lower_bound, upper_bound)
+        return str(best_result[1])
 
 
 class WoeBinning:
