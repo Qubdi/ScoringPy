@@ -20,19 +20,29 @@ By using ScoringPy, you can build robust credit scoring models with ease, reduce
   - [Processing](#processing)
     - [Pipeline Initialization](#pipeline-initialization)
       - [Type 1: Sequential Data Transformation with Automatic Flow](#type-1-sequential-data-transformation-with-automatic-flow)
+      - [Explanation](#sequential-data-transform-explanation)
       - [Type 1: Reusing the Pipeline](#type-1-reusing-the-pipeline)
       - [Type 2: Non-Sequential Data Processing with Manual Flow](#type-2-non-sequential-data-processing-with-manual-flow)
+      - [Explanation](#non-sequential-data-processing-manual-flow-explanation)
       - [Type 2: Reusing the Pipeline](#type-2-reusing-the-pipeline)
       - [Processing Optional Arguments](#processing-optional-arguments)
   - [WoeAnalysis](#woeanalysis)
     - [Methods](#methods)
       - [Analyzing Discrete Variables](#analyzing-discrete-variables)
+      - [Explanation](#analyzing-discrete-explanation)
+      - [Plotting and Saving Reports](#plotting-and-saving-reports)
       - [Analyzing Continuous Variables](#analyzing-continuous-variables)
-    - [Additional Attributes](#additional-attributes)
+        - [Auto Binning](#auto-binning)
+        - [Manual Binning](#manual-binning)
+    - [Results](#contresults)
   - [WoeBinning](#woebinning)
+    - [Parameters](#parameters)
+    - [Explanation](#params-explanation)
   - [CreditScoring](#creditscoring)
     - [Steps](#steps)
-    - [Example](#example)
+    - [Example](#creditscoring-example)
+    - [Parameters](#creditscoring-params)
+    - [Explanation](#creditscoring-exp)
   - [Performance Testing and Monitoring](#performance-testing-and-monitoring)
 - [Best Practices and Detailed Explanations](#best-practices-and-detailed-explanations)
   - [Data Preprocessing Pipeline](#data-preprocessing-pipeline)
@@ -44,7 +54,7 @@ By using ScoringPy, you can build robust credit scoring models with ease, reduce
 
 
 
-## Features
+## <a id='features'></a>Features
 - **Data Preprocessing with Pipeline**: Automate and save every data manipulation step using a pipeline, which can be easily reapplied to new data. This ensures consistent preprocessing and reduces the likelihood of errors.
 - **Feature Selection with WoE Analysis**: Generate detailed reports and visualizations for each feature based on WoE and Information Value (IV). This includes statistical summaries that help in understanding the predictive power of each feature.
 - **Binning (Manual and Automatic)**: Bin continuous features for classical scoring models. Choose between manual binning or automatic suggestions provided by the library. Binning validation is included in the feature statistics report, checking if any data falls outside bin ranges.
@@ -53,23 +63,23 @@ By using ScoringPy, you can build robust credit scoring models with ease, reduce
 - **Performance Testing**: Easily test the scorecard's performance on different data populations using the preprocessing pipelines.
 - **Monitoring**: Track scorecard and population performance over time, leveraging the consistent preprocessing steps provided by the pipelines.
 
-## Installation
+## <a id='installation'></a>Installation
 
 You can install ScoringPy using either `pip` or `conda`.
 
-### Using pip
+### <a id='using-pip'></a>Using pip
 
 ```bash
 pip install ScoringPy
 ```
 
-### Using conda
+### <a id='using-conda'></a>Using conda
 
 ```bash
 conda install -c conda-forge ScoringPy
 ```
 
-## Usage
+## <a id='usage'></a>Usage
 
 ScoringPy provides several modules, each designed for a specific part of the credit scoring process:
 
@@ -80,15 +90,15 @@ ScoringPy provides several modules, each designed for a specific part of the cre
 
 Below are detailed explanations and examples for each module.
 
-### Processing
+### <a id='processing'></a>Processing
 The **Processing** module automates data preprocessing steps using pipelines. Every transformation is saved and can be easily reapplied to new data, which is crucial for model validation and testing.
 
-#### Pipeline Initialization
+#### <a id='pipeline-initialization'></a>Pipeline Initialization
 To create a processing pipeline, initialize it using the `Processing` class. You can enable or disable automatic data flow between steps using the `flow` parameter.
 
 - **flow** (optional, default `True`): If `True`, the output from each function (step) will be passed as input to the next function automatically. If `False`, you must manage data flow manually.
 
-#### Type 1: Sequential Data Transformation with Automatic Flow
+#### <a id='type-1-sequential-data-transformation-with-automatic-flow'></a>Type 1: Sequential Data Transformation with Automatic Flow
 In this example, we'll create a pipeline with automatic data flow between steps:
 
 ```python
@@ -135,7 +145,7 @@ pipeline.clear()
 ```
 
 
-### Explanation:
+### <a id='sequential-data-transform-explanation'></a>Explanation:
 
 1. **Initialization**: We initialize the `Processing` pipeline with `flow=True`, enabling automatic data flow between steps.
 
@@ -149,7 +159,7 @@ pipeline.clear()
 
 6. **Clearing the Pipeline**: We clear the pipeline using `pipeline.clear()` if we need to reset it.
 
-### Type 1: Reusing the Pipeline
+### <a id='type-1-reusing-the-pipeline'></a>Type 1: Reusing the Pipeline
 You can load the saved pipeline and apply it to new data without redefining the steps:
 
 ```python
@@ -170,7 +180,7 @@ df_processed_new = pipeline.run(initial_data=df_new)
 pipeline.clear()
 ```
 
-#### Type 2: Non-Sequential Data Processing with Manual Flow
+#### <a id='type-2-non-sequential-data-processing-with-manual-flow'></a>Type 2: Non-Sequential Data Processing with Manual Flow
 If you need more control over the data flow between steps, you can set `flow=False` when initializing the pipeline.
 
 ```python
@@ -222,7 +232,7 @@ df_processed = pipeline.run()
 pipeline.clear()
 ```
 
-### Explanation:
+### <a id='non-sequential-data-processing-manual-flow-explanation'></a>Explanation:
 
 1. **Initialization**: We initialize the `Processing` pipeline with `flow=False`, disabling automatic data flow.
 
@@ -232,7 +242,7 @@ pipeline.clear()
 
 4. **Flow Control**: We set `flow=True` for steps where we want the output to be passed to the next step.
 
-### Type 2: Reusing the Pipeline
+### <a id='type-2-reusing-the-pipeline'></a>Type 2: Reusing the Pipeline
 
 ```python
 import dill
@@ -249,15 +259,15 @@ pipeline.clear()
 
 ```
 
-### Processing Optional Arguments
+### <a id='processing-optional-arguments'></a>Processing Optional Arguments
 
 - **flow** (`bool`, default `True`): Controls automatic data flow between steps. If set to `False`, you must manage the data flow manually.
 
-## WoeAnalysis
+## <a id='woeanalysis'></a>WoeAnalysis
 
 The **WoeAnalysis** module is designed for feature selection and binning using WoE (Weight of Evidence) analysis. It provides small reports for each feature, including statistical summaries based on WoE analysis.
 
-### Methods
+### <a id='methods'></a>Methods
 
 - **discrete**: Analyze discrete (categorical) variables.
 - **continuous**: Analyze continuous variables.
@@ -267,7 +277,7 @@ Each method supports:
 - **plot**: Visualizes WoE and IV analysis.
 - **report**: Displays and optionally saves the report.
 
-### Analyzing Discrete Variables
+### <a id='analyzing-discrete-variables'></a>Analyzing Discrete Variables
 
 ```python
 from ScoringPy import WoeAnalysis
@@ -279,7 +289,7 @@ woe_analysis = WoeAnalysis(save=False, path="Data/", type=2)
 woe_analysis.discrete(column="MaritalStatus", df=X_train, target=y_train, safety=True, threshold=300).report()
 ```
 
-### Explanation:
+### <a id='analyzing-discrete-explanation'></a>Explanation:
 
 1. **Initialization**: We initialize `WoeAnalysis` with optional parameters like `save`, `path`, and `type`.
 
@@ -291,7 +301,7 @@ woe_analysis.discrete(column="MaritalStatus", df=X_train, target=y_train, safety
 
 4. **Generating the Report**: We call the `report` method to display the analysis.
 
-### Plotting and Saving the Report:
+### <a id='plotting-and-saving-reports'></a>Plotting and Saving Reports:
 
 ```python
 # Generate a plot and display the report
@@ -306,9 +316,28 @@ woe_analysis.discrete(column="MaritalStatus", df=X_train, target=y_train, safety
 - **save**: If `True`, saves the report.
 - **type**: Specifies the format type when saving.
 
-### Analyzing Continuous Variables
-For continuous variables, you need to define bins.
+### <a id='analyzing-continuous-variables'></a>Analyzing Continuous Variables
+For continuous variables, you need to define bins.<br>
+You can use auto or manual binning for that. 
+#### <a id='auto-binning'></a>Auto Binning
 
+```python
+from ScoringPy import WoeAnalysis
+
+# Define bins using WoeAnalysis method 
+bins = woe_analysis.auto_binning(column="RefinanceRate", n_bins=10,data=X_train, target=y_train, strategy_option=None)
+
+# Analyze a continuous variable
+woe_analysis.continuous(column="RefinanceRate", bins=bins, df=X_train, target=y_train).report()
+
+# Plot and display the report
+woe_analysis.continuous(column="RefinanceRate", bins=bins, df=X_train, target=y_train).plot(rotation=90).report()
+
+# Save the report
+woe_analysis.continuous(column="RefinanceRate", bins=bins, df=X_train, target=y_train).report(save=True)
+
+```
+#### <a id='manual-binning'></a>Manual Binning
 ```python
 import numpy as np
 import pandas as pd
@@ -329,7 +358,7 @@ woe_analysis.continuous(column="RefinanceRate", bins=bins, df=X_train, target=y_
 
 ```
 
-### Additional Attributes
+### <a id='contresults'></a>Results
 
 You can extract various attributes from the `woe_analysis` object for future use:
 
@@ -341,7 +370,7 @@ IV_excel = woe_analysis.IV_excel           # IV values formatted for Excel
 IV_dict = woe_analysis.IV_dict             # Dictionary of IV values
 ```
 
-## WoeBinning
+## <a id='woebinning'></a>WoeBinning
 
 The `WoeBinning` module transforms your dataset based on the WoE analysis conducted earlier. It replaces the original feature values with their corresponding WoE values.
 
@@ -359,7 +388,7 @@ X_transformed = woe_transform.transform(X, dummy=False)
 
 ```
 
-## Parameters:
+## <a id='parameters'></a>Parameters:
 
 - **WoE_dict**: The dictionary containing WoE values.
 - **production** (`bool`, default `False`): Controls error handling for outliers.
@@ -369,23 +398,23 @@ X_transformed = woe_transform.transform(X, dummy=False)
     - If `True`, returns data with new columns derived from the WoE dictionary.
     - If `False`, transforms existing columns without changing the DataFrame's structure.
 
-### Explanation:
+### <a id='params-explanation'></a>Explanation:
 
 1. **Transformation**: The transformed data will include only the columns specified in `WoE_dict`.
 
 2. **Selective Transformation**: If you want to transform only specific features, remove unwanted features from `WoE_dict` before transformation.
 
-## CreditScoring
+## <a id='creditscoring'></a>CreditScoring
 
 The **CreditScoring** module scales scores and probabilities based on your logistic regression model and specific scaling constants. It allows you to generate a scorecard and apply it to your dataset.
 
-### Steps
+### <a id='steps'></a>Steps
 
 1. **Train a Logistic Regression Model**: Use the transformed data to train your model.
 2. **Initialize CreditScoring**: Provide the data, model, WoE dictionary, and production mode.
 3. **Apply Scoring**: Generate the scorecard and apply it to your data.
 
-### Example
+### <a id='creditscoring-example'></a>Example
 
 ```python
 from sklearn.linear_model import LogisticRegression
@@ -409,7 +438,7 @@ scorecard = result.scorecard
 
 ```
 
-### Parameters:
+### <a id='creditscoring-params'></a>Parameters:
 
 - **data**: The dataset to score.
 - **model**: The trained logistic regression model.
@@ -418,26 +447,26 @@ scorecard = result.scorecard
     - If `False`, the process will raise an error if it encounters data issues, suitable for development and debugging.
     - If `True`, it will handle outliers gracefully, making it suitable for production environments.
 
-### Explanation:
+### <a id='creditscoring-exp'></a>Explanation:
 
 1. **Scorecard Generation**: The `apply_scoring` method generates a scorecard based on the model's coefficients and constants.
 
 2. **Scored Data**: The resulting `df_scored` DataFrame includes the calculated scores for each record.
 
 
-## Performance Testing and Monitoring
+## <a id='performance-testing-and-monitoring'></a>Performance Testing and Monitoring
 
 By reusing the preprocessing pipeline and WoE transformations, you can ensure consistency in data preparation. This allows for accurate performance comparisons across different data populations, facilitating performance testing and monitoring over time.
 
-## Best Practices and Detailed Explanations
+## <a id='best-practices-and-detailed-explanations'></a>Best Practices and Detailed Explanations
 
-### Data Preprocessing Pipeline
+### <a id='data-preprocessing-pipeline'></a>Data Preprocessing Pipeline
 
 - **Consistency**: Saving and reusing pipelines ensures that the same data transformations are applied consistently across training and new data.
 - **Flow Control**: Decide between automatic and manual flow based on the complexity of your data transformations.
 - **Serialization**: Use `dill` for serializing the pipeline, which can handle complex objects like custom functions and classes.
 
-### WoE Analysis and Binning
+### <a id='woe-analysis-and-binning'></a>WoE Analysis and Binning
 
 - **Safety Checks**: Use parameters like `safety` and `threshold` to prevent creating features with too many unique values or inappropriate data types.
     - **safety** (`bool`, default `True`): If `True`, the method performs a safety check on the feature before processing, designed to prevent hardware crashes due to memory shortages when dealing with high-cardinality features.
@@ -446,23 +475,23 @@ By reusing the preprocessing pipeline and WoE transformations, you can ensure co
 - **Manual vs. Automatic Binning**: Choose manual binning for more control, or use automatic suggestions provided by the library.
 - **Outlier Handling**: Use binning validation reports to adjust bins as necessary, ensuring that data falls within defined ranges.
 
-### Data Transformation with WoeBinning
+### <a id='data-transformation-with-woebinning'></a>Data Transformation with WoeBinning
 
 - **Selective Transformation**: Modify `WoE_dict` to include only the features you want to transform.
 - **Production Mode**:
     - **Development Environment**: Set `production=False` to raise errors when outliers are encountered, allowing you to identify and fix data issues.
     - **Production Environment**: Set `production=True` to handle outliers gracefully by removing affected rows, ensuring uninterrupted processing.
 
-### Credit Score Scaling
+### <a id='credit-score-scaling'></a>Credit Score Scaling
 
 - **Customization**: Adjust scaling constants and parameters to fit your specific use case or regulatory requirements.
 - **Scorecard Generation**: Use the generated scorecard to understand how scores are computed and for transparency in decision-making.
 - **Monitoring**: Regularly test and monitor the scorecard's performance on new data to ensure it remains predictive.
 
-## Conclusion
+## <a id='conclusion'></a>Conclusion
 
 ScoringPy provides a comprehensive toolkit for building classical credit scorecards, from data preprocessing to score scaling. By automating and standardizing key steps in the credit scoring process, it helps reduce errors, improve efficiency, and ensure consistency across different datasets. With features like safety checks and production modes, it is designed to handle both development and production environments effectively.
 
-## Contribution and Support
+## <a id='contribution-and-support'></a>Contribution and Support
 
 As an open-source project, contributions are welcome. If you encounter any issues or have suggestions for improvements, feel free to submit issues or pull requests on the GitHub repository.

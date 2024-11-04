@@ -1,16 +1,15 @@
 from setuptools import setup, find_packages
 
-# python setup.py sdist bdist_wheel
+# python setup.py sdist bdist_wheel (1st in terminal)
 # pip install dist/ScoringPy-0.0.2.tar.gz
 # pip install dist/ScoringPy-0.0.2-py3-none-any.whl
 # pip install --force-reinstall dist/ScoringPy-0.0.2-py3-none-any.whl
-# twine upload dist/*
+# twine upload dist/* (2nd in terminal)
 
-# pypi-AgEI5cHlwaS5vcmcCJDkwYWJiZmI1LThkOGQtNDIwNy04Njc5LWE1OGU2ODAzMjU5ZQACEVsxLFsic2NvcmluZ3B5Il1dAAIsWzIsWyI1NGFkNTY4OS03ZTUwLTQwZDQtYTk4Ni1kZjFlODU2MzI2ODUiXV0AAAYg1F2eBtx7VK1fpS8MBh6ZOpA3FSUQnOW3CJqhkqP3p6U
 
 setup(
     name="ScoringPy",  # The name of your package
-    version="1.0.6",  # The version of your package
+    version="1.0.9",  # The version of your package
     author="Anri Tvalabeishvili, Kristine Dzneladze, Akaki Benidze",  # Your name or organization
     author_email="QubdiSolutions@gmail.com",  # Your contact email
     description="ScoringPy is an open-source Python library designed to streamline the development and deployment of classical credit scorecards.",  # A short description of your package

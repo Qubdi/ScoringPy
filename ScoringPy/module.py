@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import math
 import os
+from sklearn.preprocessing import KBinsDiscretizer
 
 
 
@@ -552,7 +553,7 @@ class WoeAnalysis:
         analysis_result.plot()  # Customize plot (assumes plot() method exists in the result)
 
         # Return the best bin intervals as a list of tuples (lower_bound, upper_bound)
-        return str(best_result[1])
+        return best_result[0]
 
 
 class WoeBinning:
