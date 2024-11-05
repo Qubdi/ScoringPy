@@ -1,420 +1,208 @@
-
 Usage
------
+=====
 
-Scheduling Methods
-##################
+ScoringPy provides several modules, each designed for a specific part of the credit scoring process:
 
-The Job Scheduler provides two main methods for scheduling tasks: the **Standard Method** and the **Decorator Method**. Below are examples of how to use both methods.
+- **Processing**: For data preprocessing.
+- **WoeAnalysis**: For feature selection and binning using WoE analysis.
+- **WoeBinning**: For transforming data based on the selected features and bins.
+- **CreditScoring**: For scaling scores and probabilities based on the model and scaling constants.
 
-Basic Example (Standard Method)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Below are detailed explanations and examples for each module.
 
-.. code-block:: python
+Processing
+----------
 
-   from Timeline_Manager import JobScheduler, Job
+The **Processing** module automates data preprocessing steps using pipelines. Every transformation is saved and can be easily reapplied to new data, which is crucial for model validation and testing.
 
-   # Initialize the scheduler
-   scheduler = JobScheduler()
+Pipeline Initialization
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-   # Define a standard task function
-   def my_task():
-       print("Task executed!")
+To create a processing pipeline, initialize it using the ``Processing`` class. You can enable or disable automatic data flow between steps using the ``flow`` parameter.
 
-   # Create a job using the standard method
-   job = Job().every(1).minute.repeat(3).do(my_task)
+- **flow** (optional, default ``True``): If ``True``, the output from each function (step) will be passed as input to the next function automatically. If ``False``, you must manage data flow manually.
 
-   # Add the job to the scheduler
-   scheduler.add_job(job)
+Type 1: Sequential Data Transformation with Automatic Flow
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   # Start the scheduler
-   scheduler.run_pending()
-
-Basic Example (Decorator Method)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In this example, we'll create a pipeline with automatic data flow between steps:
 
 .. code-block:: python
 
-   from Timeline_Manager import JobScheduler, jobs
+    from ScoringPy import Processing
+    import pandas as pd
+    import dill
 
-   # Initialize the scheduler
-   scheduler = JobScheduler()
+    # Initialize the pipeline with flow control enabled
+    pipeline = Processing(flow=True)
 
-   # Define a sample job function using the decorator method
-   @jobs(interval=1, unit='minute', repeat=3, scheduler=scheduler)
-   def my_task():
-       print("Task executed!")
+    # Define preprocessing functions
+    def fill_missing_age(data):
+        """Fill missing values in the 'Age' column with the mean."""
+        data['Age'] = data['Age'].fillna(data['Age'].mean())
+        return data
 
-   # Start the scheduler
-   scheduler.run_pending()
+    def double_age(data):
+        """Double the values in the 'Age' column."""
+        data['Age'] = data['Age'] * 2
+        return data
 
-In both examples:
+    def scale_age(data):
+        """Scale the 'Age' column by dividing by 5."""
+        data['Age'] = data['Age'] / 5
+        return data
 
-- The job is scheduled to run every minute.
-- It will repeat 3 times before stopping.
+    # Add steps to the pipeline
+    pipeline.add_step(fill_missing_age)
+    pipeline.add_step(double_age)
+    pipeline.add_step(scale_age)
 
-Scheduling Options
-##################
+    # Save the pipeline using dill
+    with open('pipeline.pkl', 'wb') as file:
+        dill.dump(pipeline, file)
 
-The `Job` class provides a variety of options for scheduling jobs. These options can be chained together to create complex scheduling scenarios.
+    # Load your dataset
+    df = pd.read_csv('data.csv')
 
-Setting Interval and Unit
-~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Run the pipeline on the dataset
+    df_processed = pipeline.run(initial_data=df)
 
-The `interval` and `unit` methods define how often the job should run. Supported units include:
+    # Clear the pipeline if needed
+    pipeline.clear()
 
-- `second`
-- `minute`
-- `hour`
-- `day`
-- `week`
-- `month`
-- `year`
+Explanation
+~~~~~~~~~~~
 
-.. code-block:: python
+1. **Initialization**: We initialize the ``Processing`` pipeline with ``flow=True``, enabling automatic data flow between steps.
 
-   job.every(5).minute.do(my_task)
+2. **Function Definitions**: We define three functions (``fill_missing_age``, ``double_age``, ``scale_age``) that perform specific data transformations.
 
-This will schedule the job to run every 5 minutes.
+3. **Adding Steps**: We add these functions to the pipeline using ``pipeline.add_step()``.
 
-Examples with `every()` for Intervals Greater Than 1
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+4. **Saving the Pipeline**: We use the ``dill`` library to serialize and save the pipeline for future reuse.
 
-Running a Job Every 2 Hours
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+5. **Running the Pipeline**: We run the pipeline on the dataset using ``pipeline.run(initial_data=df)``.
 
-**Standard Method:**
+6. **Clearing the Pipeline**: We clear the pipeline using ``pipeline.clear()`` if we need to reset it.
 
-.. code-block:: python
+WoeAnalysis
+-----------
 
-   from Timeline_Manager import JobScheduler, Job
+The **WoeAnalysis** module is designed for feature selection and binning using WoE (Weight of Evidence) analysis. It provides small reports for each feature, including statistical summaries based on WoE analysis.
 
-   # Initialize the scheduler
-   scheduler = JobScheduler()
+Methods
+~~~~~~~
 
-   # Define the task function
-   def task_every_2_hours():
-       print("Task executed every 2 hours!")
+- **discrete**: Analyze discrete (categorical) variables.
+- **continuous**: Analyze continuous variables.
 
-   # Create a job to run every 2 hours
-   job = Job().every(2).hour.do(task_every_2_hours)
+Each method supports:
 
-   # Add the job to the scheduler
-   scheduler.add_job(job)
+- **plot**: Visualizes WoE and IV analysis.
+- **report**: Displays and optionally saves the report.
 
-   # Start the scheduler
-   scheduler.run_pending()
-
-**Decorator Method:**
-
-.. code-block:: python
-
-   from Timeline_Manager import JobScheduler, jobs
-
-   # Initialize the scheduler
-   scheduler = JobScheduler()
-
-   @jobs(interval=2, unit='hour', scheduler=scheduler)
-   def task_every_2_hours():
-       print("Task executed every 2 hours!")
-
-   # Start the scheduler
-   scheduler.run_pending()
-
-In this example:
-
-- The job is scheduled to run every 2 hours.
-- It will continue running indefinitely until the program is stopped or the job is removed.
-
-Running a Job Every 3 Days
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-**Standard Method:**
+Analyzing Discrete Variables
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
-   from Timeline_Manager import JobScheduler, Job
+    from ScoringPy import WoeAnalysis
 
-   # Initialize the scheduler
-   scheduler = JobScheduler()
+    # Initialize WoeAnalysis
+    woe_analysis = WoeAnalysis(save=False, path="Data/", type=2)
 
-   # Define the task function
-   def task_every_3_days():
-       print("Task executed every 3 days!")
+    # Analyze a discrete variable with safety checks
+    woe_analysis.discrete(column="MaritalStatus", df=X_train, target=y_train, safety=True, threshold=300).report()
 
-   # Create a job to run every 3 days
-   job = Job().every(3).day.do(task_every_3_days)
+Explanation
+~~~~~~~~~~~
 
-   # Add the job to the scheduler
-   scheduler.add_job(job)
+1. **Initialization**: We initialize ``WoeAnalysis`` with optional parameters like ``save``, ``path``, and ``type``.
 
-   # Start the scheduler
-   scheduler.run_pending()
+2. **Safety Parameters**:
+    - **safety** (``bool``, default ``True``): Controls whether to perform safety checks on the feature before processing.
+    - **threshold** (``int``, default ``300``): Specifies the maximum number of unique values allowed in a discrete feature.
 
-**Decorator Method:**
+3. **Analyzing the Variable**: We call the ``discrete`` method, passing the column name, DataFrame ``X_train``, target variable ``y_train``, and safety parameters.
 
-.. code-block:: python
+4. **Generating the Report**: We call the ``report`` method to display the analysis.
 
-   from Timeline_Manager import JobScheduler, jobs
-
-   # Initialize the scheduler
-   scheduler = JobScheduler()
-
-   @jobs(interval=3, unit='day', scheduler=scheduler)
-   def task_every_3_days():
-       print("Task executed every 3 days!")
-
-   # Start the scheduler
-   scheduler.run_pending()
-
-In this example:
-
-- The job is scheduled to run every 3 days.
-- It will continue running every 3 days until the program is stopped or the job is removed.
-
-Running a Job Every 2 Weeks on Monday
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-**Standard Method:**
+Plotting and Saving Reports
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
-   from Timeline_Manager import JobScheduler, Job
+    # Generate a plot and display the report
+    woe_analysis.discrete(column="MaritalStatus", df=X_train, target=y_train, safety=True, threshold=300).plot(rotation=0).report()
 
-   # Initialize the scheduler
-   scheduler = JobScheduler()
+    # Save the report
+    woe_analysis.discrete(column="MaritalStatus", df=X_train, target=y_train, safety=True, threshold=300).report(save=True, type=1)
 
-   # Define the task function
-   def task_every_2_weeks():
-       print("Task executed every 2 weeks!")
+WoeBinning
+----------
 
-   # Create a job to run every 2 weeks on Monday
-   job = Job().every(2).week(weekday=0).do(task_every_2_weeks)
-
-   # Add the job to the scheduler
-   scheduler.add_job(job)
-
-   # Start the scheduler
-   scheduler.run_pending()
-
-**Decorator Method:**
+The ``WoeBinning`` module transforms your dataset based on the WoE analysis conducted earlier. It replaces the original feature values with their corresponding WoE values.
 
 .. code-block:: python
 
-   from Timeline_Manager import JobScheduler, jobs
+    from ScoringPy import WoeBinning
 
-   # Initialize the scheduler
-   scheduler = JobScheduler()
+    # Assume WoE_dict is obtained from WoeAnalysis
+    WoE_dict = woe_analysis.WoE_dict
 
-   @jobs(interval=2, unit='week', scheduler=scheduler)
-   def task_every_2_weeks():
-       print("Task executed every 2 weeks!")
+    # Initialize WoeBinning
+    woe_transform = WoeBinning(WoE_dict=WoE_dict, production=False)
 
-   # Start the scheduler
-   scheduler.run_pending()
+    # Transform the data
+    X_transformed = woe_transform.transform(X, dummy=False)
 
-In this example:
+Parameters
+~~~~~~~~~~
 
-- The job is scheduled to run every 2 weeks on Monday.
-- It will continue running every 2 weeks on the specified weekday until the program is stopped or the job is removed.
+- **WoE_dict**: The dictionary containing WoE values.
+- **production** (``bool``, default ``False``): Controls error handling for outliers.
+- **dummy** (``bool``, default ``False``): Controls the structure of the output DataFrame.
 
-Running a Job Every 3 Months on the 15th at 9:00 AM
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Explanation
+~~~~~~~~~~~
 
-**Standard Method:**
+1. **Transformation**: The transformed data will include only the columns specified in ``WoE_dict``.
 
-.. code-block:: python
+2. **Selective Transformation**: If you want to transform only specific features, remove unwanted features from ``WoE_dict`` before transformation.
 
-   from Timeline_Manager import JobScheduler, Job
+CreditScoring
+-------------
 
-   # Initialize the scheduler
-   scheduler = JobScheduler()
+The **CreditScoring** module scales scores and probabilities based on your logistic regression model and specific scaling constants. It allows you to generate a scorecard and apply it to your dataset.
 
-   # Define the task function
-   def task_every_3_months():
-       print("Task executed every 3 months!")
-
-   # Create a job to run every 3 months on the 15th at 9:00 AM
-   job = Job().every(3).month(day=15, time_at="09:00").do(task_every_3_months)
-
-   # Add the job to the scheduler
-   scheduler.add_job(job)
-
-   # Start the scheduler
-   scheduler.run_pending()
-
-**Decorator Method:**
+Example
+~~~~~~~
 
 .. code-block:: python
 
-   from Timeline_Manager import JobScheduler, jobs
+    from sklearn.linear_model import LogisticRegression
+    from ScoringPy import CreditScoring
 
-   # Initialize the scheduler
-   scheduler = JobScheduler()
+    # Assume X_transformed is your WoE-transformed data
+    # Assume y is your target variable
 
-   @jobs(interval=3, unit='month', time_at="09:00", scheduler=scheduler)
-   def task_every_3_months():
-       print("Task executed every 3 months!")
+    # Train the logistic regression model
+    model = LogisticRegression(max_iter=1000, class_weight='balanced', C=0.1)
 
-   # Start the scheduler
-   scheduler.run_pending()
+    # Initialize CreditScoring
+    scoring = CreditScoring(data=X_train, model=model, WoE_dict=WoE_dict, production=True)
 
-In this example:
+    # Apply scoring to the data
+    result = scoring.apply(X_train)
 
-- The job is scheduled to run every 3 months on the 15th at 9:00 AM.
-- It will continue running every 3 months on the specified date and time until the program is stopped or the job is removed.
+    # Access the scored data and scorecard
+    df_scored = result.data
+    scorecard = result.scorecard
 
-Running a Job Every 2 Years on January 1st at Midnight
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Parameters
+~~~~~~~~~~
 
-**Standard Method:**
-
-.. code-block:: python
-
-   from Timeline_Manager import JobScheduler, Job
-
-   # Initialize the scheduler
-   scheduler = JobScheduler()
-
-   # Define the task function
-   def task_every_2_years():
-       print("Task executed every 2 years!")
-
-   # Create a job to run every 2 years on January 1st at midnight
-   job = Job().every(2).year(month=1, day=1, time_at="00:00").do(task_every_2_years)
-
-   # Add the job to the scheduler
-   scheduler.add_job(job)
-
-   # Start the scheduler
-   scheduler.run_pending()
-
-**Decorator Method:**
-
-.. code-block:: python
-
-   from Timeline_Manager import JobScheduler, jobs
-
-   # Initialize the scheduler
-   scheduler = JobScheduler()
-
-   @jobs(interval=2, unit='year', time_at="00:00", scheduler=scheduler)
-   def task_every_2_years():
-       print("Task executed every 2 years!")
-
-   # Start the scheduler
-   scheduler.run_pending()
-
-In this example:
-
-- The job is scheduled to run every 2 years on January 1st at midnight.
-- It will continue running every 2 years on the specified date and time until the program is stopped or the job is removed.
-
-Running Multiple Jobs Simultaneously
-####################################
-
-The Job Scheduler allows you to schedule multiple jobs that can run at the same time. For example, you might want to run two different tasks every day at the same time.
-
-Running Multiple Jobs Simultaneously (Standard Method)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-   from Timeline_Manager import JobScheduler, Job
-
-   # Initialize the scheduler
-   scheduler = JobScheduler()
-
-   # Define task functions
-   def task1():
-       print("Task 1 executed!")
-
-   def task2():
-       print("Task 2 executed!")
-
-   # Create jobs that run at the same time
-   job1 = Job().every(1).day.at("08:00").do(task1)
-   job2 = Job().every(1).day.at("08:00").do(task2)
-
-   # Add jobs to the scheduler
-   scheduler.add_job(job1)
-   scheduler.add_job(job2)
-
-   # Start the scheduler
-   scheduler.run_pending()
-
-Running Multiple Jobs Simultaneously (Decorator Method)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-   from Timeline_Manager import JobScheduler, jobs
-
-   # Initialize the scheduler
-   scheduler = JobScheduler()
-
-   @jobs(interval=1, unit='day', time_at="08:00", scheduler=scheduler)
-   def task1():
-       print("Task 1 executed!")
-
-   @jobs(interval=1, unit='day', time_at="08:00", scheduler=scheduler)
-   def task2():
-       print("Task 2 executed!")
-
-   # Start the scheduler
-   scheduler.run_pending()
-
-In this example:
-
-- Both `task1` and `task2` are scheduled to run at 8:00 AM every day.
-- They will execute simultaneously, allowing multiple tasks to be performed at the same time.
-
-Weekday, Day, and Month Ranges
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-When scheduling jobs, you can specify specific weekdays, days of the month, and months. Below are the values for each:
-
-- **Weekday Values**:
-
-  - 0: Monday
-  - 1: Tuesday
-  - 2: Wednesday
-  - 3: Thursday
-  - 4: Friday
-  - 5: Saturday
-  - 6: Sunday
-
-- **Day Values**:
-
-  - 1-31: Represents the days of the month.
-
-- **Month Values**:
-
-  - 1: January
-  - 2: February
-  - 3: March
-  - 4: April
-  - 5: May
-  - 6: June
-  - 7: July
-  - 8: August
-  - 9: September
-  - 10: October
-  - 11: November
-  - 12: December
-
-Threading (Optional)
-####################
-
-To run jobs in separate threads (useful for non-blocking execution), set `use_threading=True` when initializing the `JobScheduler`.
-
-.. code-block:: python
-
-   scheduler = JobScheduler(use_threading=True)
-
-In this example:
-
-- The scheduler is set up to run jobs in separate threads, allowing them to execute independently of each other.
-- This can be useful for long-running tasks that should not block the execution of other jobs.
-
-
+- **data**: The dataset to score.
+- **model**: The trained logistic regression model.
+- **WoE_dict**: The WoE dictionary used for transformations.
+- **production** (``bool``, default ``True``): Controls error handling for outliers during scoring.

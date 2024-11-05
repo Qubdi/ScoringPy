@@ -4,18 +4,18 @@ Timeline Manager Documentation
 Overview
 --------
 
-The Job Scheduler is a Python library designed for scheduling and managing recurring tasks (jobs). This library allows you to easily set up jobs that can run at specific intervals (e.g., every minute, every hour, etc.), on specific days, or until a certain time, with support for repetition. Threading is also supported and optional for non-blocking execution.
+ScoringPy is an open-source Python library designed to streamline the development and deployment of classical credit scorecards. It simplifies the entire process from data preprocessing to scorecard scaling by providing robust tools and methods that ensure data integrity and model performance. By incorporating multiple layers of data anomaly detection, ScoringPy minimizes errors before model training, enhancing efficiency and reliability.
 
 Features
 --------
 
-- **Flexible Scheduling**: Schedule jobs to run every few seconds, minutes, hours, days, weeks, months, or even years.
-- **Specific Time Execution**: Run jobs at a specific time of day or on specific days of the week or month.
-- **Repeat and Until**: Set jobs to run a certain number of times or until a specific date and time.
-- **Threading Support**: Optionally execute jobs in separate threads for non-blocking execution.
-- **Two Scheduling Methods**: Jobs can be scheduled using a decorator-based approach or a standard object-oriented method.
-- **Simultaneous Job Execution**: Multiple jobs can be scheduled to run at the same time.
-- **Easy Job Management**: Add, execute, and manage multiple jobs with a simple API.
+- **Data Preprocessing with Pipeline**: Automate and save every data manipulation step using a pipeline, which can be easily reapplied to new data. This ensures consistent preprocessing and reduces the likelihood of errors.
+- **Feature Selection with WoE Analysis**: Generate detailed reports and visualizations for each feature based on WoE and Information Value (IV). This includes statistical summaries that help in understanding the predictive power of each feature.
+- **Binning (Manual and Automatic)**: Bin continuous features for classical scoring models. Choose between manual binning or automatic suggestions provided by the library. Binning validation is included in the feature statistics report, checking if any data falls outside bin ranges.
+- **Final Data Transformation**: Apply a second layer of protection against outlier data. The library alerts you if any data points fall outside the defined bin ranges during transformation.
+- **Scorecard Deployment and Scaling**: Scale scores based on the model's coefficients and constants. The scaling is fully customizable, with default values optimized for most scaling scenarios.
+- **Performance Testing**: Easily test the scorecard's performance on different data populations using the preprocessing pipelines.
+- **Monitoring**: Track scorecard and population performance over time, leveraging the consistent preprocessing steps provided by the pipelines.
 
 
 .. toctree::

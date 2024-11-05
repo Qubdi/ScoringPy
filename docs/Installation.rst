@@ -16,7 +16,7 @@ We recommend using the latest version of Python. **ScoringPy** is tested on:
 Dependencies
 ############
 
-**Timeline Manager** has no mandatory dependencies.
+**ScoringPy** has no mandatory dependencies.
 
 Installation Instructions
 #########################
@@ -30,48 +30,48 @@ The recommended way to install **Timeline Manager** is via pip. Use the followin
 
 .. code-block:: bash
 
-    pip install Timeline-Manager
+    pip install ScoringPy
 
-After installation, **Timeline Manager** is ready to use. Refer to the `Doc <https://timeline-manager.readthedocs.io/en/latest/index.html>`_ for further instructions.
+After installation, **ScoringPy** is ready to use. Refer to the `Doc <https://timeline-manager.readthedocs.io/en/latest/index.html>`_ for further instructions.
 
 Using Another Package Manager
 ******************************
 
-**Timeline Manager** might be available through some Linux package managers, though using pip ensures you get the latest version.
+**ScoringPy** might be available through some Linux package managers, though using pip ensures you get the latest version.
 
 Ubuntu
 -------
 
-As of the latest update, **Timeline Manager** is not directly available via Ubuntu package managers. We recommend using pip for installation:
+As of the latest update, **ScoringPy** is not directly available via Ubuntu package managers. We recommend using pip for installation:
 
 .. code-block:: bash
 
     sudo apt-get update
     sudo apt-get install python3-pip
-    pip3 install Timeline-Manager
+    pip3 install ScoringPy
 
 Conda (Anaconda)
 ----------------
 
-**Timeline Manager** is not officially published on conda. However, you can create a custom conda environment and install the library via pip:
+**ScoringPy** is not officially published on conda. However, you can create a custom conda environment and install the library via pip:
 
 .. code-block:: bash
 
     conda create -n timeline-manager python=3.12
     conda activate timeline-manager
-    pip install Timeline-Manager
+    pip install ScoringPy
 
 Install Manually
 ****************
 
 If you don't have access to a package manager or need more control, you can manually install the library:
 
-1. Clone the `GitHub <https://github.com/anri-Tvalabeishvili/Timeline-Manager/tree/main>`_.
+1. Clone the `GitHub <https://github.com/Qubdi/ScoringPy>`_.
 2. Navigate to the directory:
 
    .. code-block:: bash
 
-      cd timeline-manager
+      cd ScoringPy
 
 3. Install the package:
 
