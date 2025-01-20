@@ -797,3 +797,518 @@ class CreditScoring:
 
         return self
 
+class _MetricsResult:
+    def __init__(self, dataframe, plot_func):
+        """
+        Initializes the MetricsResult object with a DataFrame and a plotting function.
+
+        Args:
+            dataframe (pd.DataFrame): Data to be analyzed and displayed.
+            plot_func (function): A function for plotting the data.
+        """
+        self.dataframe = dataframe
+        self._plot_func = plot_func
+
+    def plot(self):
+        """
+        Calls the plotting function and returns the DataFrame.
+        """
+        self._plot_func()
+        return self.dataframe  # Return DataFrame after plotting
+
+    def __repr__(self):
+        """
+        Returns string representation of the DataFrame.
+        """
+        return self.dataframe.__repr__()
+
+    def __getitem__(self, key):
+        """
+        Enables indexing into the DataFrame.
+        """
+        return self.dataframe[key]
+
+    def __getattr__(self, attr):
+        """
+        Allows access to DataFrame attributes directly.
+        """
+        return getattr(self.dataframe, attr)
+
+class Metrics:
+    def __init__(self, Credit_score='Scores', Target='Actual',  Date_column=None, Positive_Target=1, Negative_Target=0,  Data_path=None, Plot_path=None):
+        """
+        Initializes the Metrics object with default parameters for credit scoring analysis.
+
+        Args:
+            Credit_score (str): Column name for credit scores.
+            Target (str): Column name for target variable.
+            Positive_Target (int): Value representing a positive target (e.g., good loan).
+            Negative_Target (int): Value representing a negative target (e.g., bad loan).
+            date_column (str): Column name for date values used in trend analysis.
+            data_path (str): Path for saving data reports.
+            plot_path (str): Path for saving plot images.
+        """
+        self.Credit_score = Credit_score
+        self.Target = Target
+        self.Positive_Target = Positive_Target
+        self.Negative_Target = Negative_Target
+        self.Date_column = Date_column  # New global variable for date column
+        self.Data_path = Data_path
+        self.Plot_path = Plot_path
+
+    def cutoff(self, data, approved_Rate, display=False):
+        """
+        Calculates and returns cutoff metrics for a specified approval rate.
+
+        Args:
+            data (pd.DataFrame): Input data containing credit scores and target variable.
+            approved_Rate (float): Desired approval rate as a percentage.
+            display (bool): If True, prints metrics.
+
+        Returns:
+            tuple: Cutoff score, good percentage among approved, bad percentage among approved,
+            approval rate, bad percentage under cutoff.
+
+        Raises:
+            ValueError: If `approved_Rate` is not between 0 and 100.
+            KeyError: If `Credit_score` or `Target` column is missing in the data.
+        """
+        if not (0 <= approved_Rate <= 100):
+            raise ValueError("approved_Rate must be between 0 and 100.")
+
+        if self.Credit_score not in data.columns or self.Target not in data.columns:
+            raise KeyError(f"Data must contain columns '{self.Credit_score}' and '{self.Target}'.")
+
+        df_sorted = data.sort_values(by=self.Credit_score, ascending=False)
+        percent_index = int((approved_Rate / 100) * len(df_sorted))
+        cutoff_score = df_sorted.iloc[percent_index][self.Credit_score]
+
+        # Split data based on cutoff score
+        data_above_cutoff = data[data[self.Credit_score] >= cutoff_score]
+        data_under_cutoff = data[data[self.Credit_score] < cutoff_score]
+
+        approved_above_cutoff = data_above_cutoff.shape[0]
+        good_above_cutoff = data_above_cutoff[data_above_cutoff[self.Target] == self.Positive_Target].shape[0]
+
+        approve_rate = round((approved_above_cutoff / data.shape[0]) * 100, 2)
+        good_perc_approved = round((good_above_cutoff / approved_above_cutoff) * 100, 2) if approved_above_cutoff else 0.0
+        bad_perc_approved = round(100 - good_perc_approved, 2)
+
+        bad_perc_under_cuttof = round(
+            data_under_cutoff[data_under_cutoff[self.Target] == self.Negative_Target].shape[0]
+            / data_under_cutoff.shape[0] * 100, 2) if data_under_cutoff.shape[0] else 0.0
+
+        if display:
+            print(f"""Cutoff Score: {round(cutoff_score, 2)}
+            Good Percentage Among Approved: {good_perc_approved}%
+            Bad Percentage Among Approved: {bad_perc_approved}%
+            Approval Rate: {approve_rate}%""")
+
+        return cutoff_score, good_perc_approved, bad_perc_approved, approve_rate, bad_perc_under_cuttof
+
+
+    def Lineplot(self, data, X_value, Y_values, Y_labels, save=False, X_rotation=90, Y_rotation=0, Grid=True, Title=None, figsize=(10, 4), fontsize=12, show=False):
+        """
+        Creates a line plot for the given data.
+
+        Args:
+            data (pd.DataFrame): Data to plot.
+            X_value (str): Column name for x-axis values.
+            Y_values (list): List of column names for y-axis values.
+            Y_labels (list): List of labels for y-axis data.
+            save (bool): If True, saves the plot as an image.
+            X_rotation (int): Rotation angle for x-axis labels.
+            Y_rotation (int): Rotation angle for y-axis labels.
+            Grid (bool): Whether to show grid.
+            Title (str): Title of the plot.
+            figsize (tuple): Figure size of the plot.
+            fontsize (int): Font size for labels and title.
+            show (bool): Whether to display the plot.
+
+        Raises:
+            ValueError: If `X_value` or `Y_values` columns are missing in the data.
+            ValueError: If `Title` is missing and save is True.
+        """
+        if X_value not in data.columns:
+            raise ValueError(f"X_value '{X_value}' not found in data.")
+        if not all(y in data.columns for y in Y_values):
+            raise ValueError(f"Y_values {Y_values} not found in data.")
+
+        sns.set_style("darkgrid" if Grid else "dark")
+        plt.figure(figsize=figsize)
+        for y_value, label in zip(Y_values, Y_labels):
+            sns.lineplot(x=X_value, y=y_value, data=data, label=label, marker='o')
+            for x, y in zip(data[X_value], data[y_value]):
+                plt.annotate(f'{round(y, 2)}', (x, y), textcoords="offset points", xytext=(0, 5), ha='center', fontsize=fontsize * 0.6)
+
+        plt.xlabel(X_value, fontsize=fontsize)  # Use X_value for the x-axis label
+        plt.ylabel(", ".join(Y_labels), fontsize=fontsize)  # Concatenate Y_labels for the y-axis label
+        if Title:
+            plt.title(Title, fontsize=fontsize)
+        plt.xticks(rotation=X_rotation, fontsize=fontsize)
+        plt.yticks(rotation=Y_rotation, fontsize=fontsize)
+        plt.legend(fontsize=fontsize)
+
+        if save:
+            if not self.Plot_path:
+                raise ValueError("Plot path is not set. Please specify `plot_path` to save the plot.")
+            plt.savefig(self.Plot_path + f'{Title}.png', bbox_inches='tight', format='png')
+
+        if show:
+            plt.show()
+
+
+    def cutoff_report(self, data, step=5, title='Cutoff Report', save=False):
+        """
+        Generates a report showing various cutoff metrics across approval rates.
+
+        Args:
+            data (pd.DataFrame): Input data containing credit scores and target variable.
+            step (int): Step size for approval rates (default: 5).
+            title (str): Title for the saved report (if save=True).
+            save (bool): If True, saves the report to an Excel file.
+
+        Returns:
+            MetricsResult: Contains the DataFrame with cutoff metrics and a plot function.
+
+        Raises:
+            ValueError: If `step` is less than or equal to 0.
+            KeyError: If necessary columns are missing in `data`.
+            ValueError: If `title` is not provided when `save` is True.
+            ValueError: If `save=True` and `data_path` is not set.
+        """
+        if step <= 0:
+            raise ValueError("Step must be greater than 0.")
+
+        if self.Credit_score not in data.columns or self.Target not in data.columns:
+            raise KeyError(f"Data must contain columns '{self.Credit_score}' and '{self.Target}'.")
+
+        if save and not self.Data_path:
+            raise ValueError("Data path is not set. Please specify `data_path` to save the report.")
+
+        results = []
+
+        for j in range(20, 100, step):
+            approve_rate = self.cutoff(
+                data=data[[self.Target, self.Credit_score]],
+                approved_Rate=j,
+                display=False
+            )
+            results.append({
+                'Cutoff Score': approve_rate[0],
+                'Good Percentage': approve_rate[1],
+                'Bad Percentage': approve_rate[2],
+                'Approval Rate': approve_rate[3],
+                'Bad Percentage Under Cutoff': approve_rate[4]
+            })
+
+        results_df = pd.DataFrame(results)
+
+        if save:
+            results_df.to_excel(self.Data_path + f"{title}.xlsx")
+
+        def plot(save=False):
+            """
+            Plots approval rate against bad rate.
+
+            Args:
+                save (bool): If True, saves the plot.
+
+            Raises:
+                ValueError: If `save=True` and `plot_path` is not set.
+            """
+            if save and not self.Plot_path:
+                raise ValueError("Plot path is not set. Please specify `plot_path` to save the plot.")
+
+            self.Lineplot(
+                data=results_df,
+                X_value='Bad Percentage',
+                Y_values=['Approval Rate'],
+                Y_labels=['Model Approved'],
+                Title="Approve Rate Over Bad Rate",
+                figsize=(12, 5),
+                show=True,
+                X_rotation=0,
+                save=save
+            )
+
+        return _MetricsResult(results_df, plot)
+
+
+    def Score_Binning(self, data, bins=20, binning_type=1, title='Scores Binning', save=False):
+        """
+        Bins the credit scores and generates summary statistics for each bin.
+
+        Args:
+            data (pd.DataFrame): Input data with scores and target.
+            bins (int): Number of bins (default: 20).
+            binning_type (int): 1 for quantile binning, 2 for equal-width binning.
+            title (str): Title for the saved report (if save=True).
+            save (bool): If True, saves the binning report to an Excel file.
+
+        Returns:
+            MetricsResult: Contains the binned DataFrame and a plot function.
+
+        Raises:
+            ValueError: If `binning_type` is not 1 or 2.
+            KeyError: If `Credit_score` or `Target` column is missing in data.
+            ValueError: If `bins` is less than 1.
+            ValueError: If `save=True` and `data_path` is not set.
+        """
+        if self.Credit_score not in data.columns or self.Target not in data.columns:
+            raise KeyError(f"Data must contain columns '{self.Credit_score}' and '{self.Target}'.")
+
+        if bins < 1:
+            raise ValueError("Number of bins must be at least 1.")
+
+        if binning_type not in [1, 2]:
+            raise ValueError("binning_type must be 1 (quantile) or 2 (equal-width).")
+
+        if save and not self.Data_path:
+            raise ValueError("Data path is not set. Please specify `data_path` to save the report.")
+
+        Data = data.sort_values(by=self.Credit_score)
+
+        if binning_type == 1:
+            Data['Bin'] = pd.qcut(Data[self.Credit_score], q=bins, duplicates='drop')
+        else:
+            Data['Bin'] = pd.cut(Data[self.Credit_score], bins=bins, duplicates='drop')
+
+        grouped = Data.groupby('Bin').agg(
+            Count=('Scores', 'count'),
+            Bad=('Actual', lambda x: (x == self.Negative_Target).sum()),
+            Good=('Actual', lambda x: (x == self.Positive_Target).sum())
+        ).reset_index()
+
+        grouped['Bad Rate'] = (grouped['Bad'] / grouped['Count']) * 100
+        grouped['Good Rate'] = (grouped['Good'] / grouped['Count']) * 100
+
+        grouped.insert(0, 'RowNumber', grouped.index + 1)
+
+        if save:
+            grouped.to_excel(self.Data_path + f'{title}.xlsx')
+
+        def plot(save=False):
+            """
+            Plots the bad rate across score bins.
+
+            Args:
+                save (bool): If True, saves the plot.
+
+            Raises:
+                ValueError: If `save=True` and `plot_path` is not set.
+            """
+            if save and not self.Plot_path:
+                raise ValueError("Plot path is not set. Please specify `plot_path` to save the plot.")
+
+            self.Lineplot(
+                data=grouped,
+                X_value='RowNumber',
+                Y_values=['Bad Rate'],
+                Y_labels=['Bad Rate'],
+                Title=title,
+                figsize=(12, 5),
+                show=True,
+                X_rotation=0,
+                save=save
+            )
+
+        return _MetricsResult(grouped, plot)
+
+
+    def approval_rate_trend(self, data, period='M', score_cutoff=None, save=False, title='Approval Rate Trend'):
+        """
+        Calculates approval rate trends over time based on a single period and provides a combined summary table.
+
+        Args:
+            data (pd.DataFrame): Input data containing a date column and credit score.
+            period (str): Custom period string (e.g., '2D' for 2 days, '3W' for 3 weeks, '5M' for 5 months).
+            score_cutoff (float or int, optional): Cutoff score to determine approvals. Applications with scores
+                                                   above this value are "approved"; those below are "rejected."
+            save (bool): If True, saves the combined report to an Excel file.
+            title (str): Title for the saved report (if save=True).
+
+        Returns:
+            MetricsResult: Contains the DataFrame with approval rates and other metrics over time and a plot function.
+
+        Raises:
+            KeyError: If `date_column` or `Credit_score` is missing in data.
+            ValueError: If `save=True` and `data_path` is not set.
+            ValueError: If `date_column` is not set during initialization or method call.
+        """
+        if not self.Date_column:
+            raise ValueError("date_column is not set. Please specify `date_column` during initialization or use a method with a date column.")
+
+        if self.Date_column not in data.columns or self.Credit_score not in data.columns:
+            raise KeyError(f"Data must contain columns '{self.Date_column}' and '{self.Credit_score}'.")
+
+        if save and not self.Data_path:
+            raise ValueError("Data path is not set. Please specify `data_path` to save the report.")
+
+        # Ensure the date column is in datetime format
+        data[self.Date_column] = pd.to_datetime(data[self.Date_column])
+
+        # Group data by the specified period
+        grouped = data.groupby(pd.Grouper(key=self.Date_column, freq=period))
+
+        # Initialize the result DataFrame
+        combined_data = []
+
+        for date, group in grouped:
+            if group.empty:
+                continue
+
+            total_applications = group.shape[0]
+
+            # Determine approvals and rejections based on score cutoff
+            if score_cutoff is not None:
+                approved_applications = group[group[self.Credit_score] >= score_cutoff].shape[0]
+                rejected_applications = group[group[self.Credit_score] < score_cutoff].shape[0]
+            else:
+                raise ValueError("score_cutoff must be provided to calculate approval rate.")
+
+            approval_rate = (approved_applications / total_applications) * 100
+
+            combined_data.append({
+                'Period': date.strftime('%Y-%m-%d'),
+                'Period Length': period,  # Add period type
+                'Total Applications': total_applications,
+                'Approved Applications': approved_applications,
+                'Rejected Applications': rejected_applications,
+                'Approval Rate (%)': approval_rate
+            })
+
+        # Convert to DataFrame
+        combined_df = pd.DataFrame(combined_data)
+
+        if save:
+            combined_df.to_excel(self.Data_path + f'{title}_{period}_combined.xlsx', index=False)
+
+        def plot(save=False):
+            """
+            Plots the approval rate trend over time.
+
+            Args:
+                save (bool): If True, saves the plot.
+
+            Raises:
+                ValueError: If `save=True` and `plot_path` is not set.
+            """
+            if save and not self.Plot_path:
+                raise ValueError("Plot path is not set. Please specify `plot_path` to save the plot.")
+
+            self.Lineplot(
+                data=combined_df,
+                X_value='Period',
+                Y_values=['Approval Rate (%)'],
+                Y_labels=['Approval Rate (%)'],
+                Title=f'{title} ({period} Period)',
+                figsize=(12, 6),
+                show=True,
+                save=save,
+                X_rotation=45
+            )
+
+        return _MetricsResult(combined_df, plot)
+
+
+    def risk_trend_analysis(self, data, period='M', score_cutoff=None, save=False, title='Risk Trend Analysis'):
+        """
+        Calculates and plots the risk trend (negative target rate) over time for applications above cutoff, below cutoff, and total.
+
+        Args:
+            data (pd.DataFrame): Input data containing a date column, credit score, and target variable.
+            period (str): Custom period string (e.g., '2D' for 2 days, '3W' for 3 weeks, '5M' for 5 months).
+            score_cutoff (float or int, optional): Cutoff score to determine approvals. Applications with scores
+                                                   above this value are "approved"; those below are "rejected."
+            save (bool): If True, saves the combined report and plot to Excel and image files.
+            title (str): Title for the saved report and plot.
+
+        Returns:
+            MetricsResult: Contains the DataFrame with risk metrics over time and a plot function.
+
+        Raises:
+            KeyError: If `date_column` or `Credit_score` is missing in data.
+            ValueError: If `save=True` and `data_path` is not set.
+            ValueError: If `date_column` is not set during initialization or method call.
+        """
+        if not self.Date_column:
+            raise ValueError("date_column is not set. Please specify `date_column` during initialization or use a method with a date column.")
+
+        if self.Date_column not in data.columns or self.Credit_score not in data.columns or self.Target not in data.columns:
+            raise KeyError(f"Data must contain columns '{self.Date_column}', '{self.Credit_score}', and '{self.Target}'.")
+
+        if save and not self.Data_path:
+            raise ValueError("Data path is not set. Please specify `data_path` to save the report.")
+
+        # Ensure the date column is in datetime format
+        data[self.Date_column] = pd.to_datetime(data[self.Date_column])
+
+        # Group data by the specified period
+        grouped = data.groupby(pd.Grouper(key=self.Date_column, freq=period))
+
+        # Initialize the result DataFrame
+        combined_data = []
+
+        for date, group in grouped:
+            if group.empty:
+                continue
+
+            total_applications = group.shape[0]
+            total_negative = group[group[self.Target] == self.Negative_Target].shape[0]
+            total_risk = (total_negative / total_applications) * 100 if total_applications else 0
+
+            # Above and below cutoff analysis
+            if score_cutoff is not None:
+                above_cutoff = group[group[self.Credit_score] >= score_cutoff]
+                below_cutoff = group[group[self.Credit_score] < score_cutoff]
+
+                above_negative = above_cutoff[above_cutoff[self.Target] == self.Negative_Target].shape[0]
+                below_negative = below_cutoff[below_cutoff[self.Target] == self.Negative_Target].shape[0]
+
+                above_risk = (above_negative / above_cutoff.shape[0]) * 100 if above_cutoff.shape[0] else 0
+                below_risk = (below_negative / below_cutoff.shape[0]) * 100 if below_cutoff.shape[0] else 0
+            else:
+                above_risk, below_risk = None, None
+
+            combined_data.append({
+                'Period': date.strftime('%Y-%m-%d'),
+                'Total Risk (%)': total_risk,
+                'Above Cutoff Risk (%)': above_risk,
+                'Below Cutoff Risk (%)': below_risk,
+            })
+
+        # Convert to DataFrame
+        combined_df = pd.DataFrame(combined_data)
+
+        if save:
+            combined_df.to_excel(self.Data_path + f'{title}_{period}_risk_combined.xlsx', index=False)
+
+        def plot(save=False):
+            """
+            Plots the risk trend over time for above cutoff, below cutoff, and total.
+
+            Args:
+                save (bool): If True, saves the plot.
+
+            Raises:
+                ValueError: If `save=True` and `plot_path` is not set.
+            """
+            if save and not self.Plot_path:
+                raise ValueError("Plot path is not set. Please specify `plot_path` to save the plot.")
+
+            self.Lineplot(
+                data=combined_df,
+                X_value='Period',
+                Y_values=['Above Cutoff Risk (%)', 'Below Cutoff Risk (%)', 'Total Risk (%)'],
+                Y_labels=['Above Cutoff', 'Below Cutoff', 'Total'],
+                Title=f'{title} ({period} Period)',
+                figsize=(12, 6),
+                show=True,
+                save=save,
+                X_rotation=45
+            )
+
+        return _MetricsResult(combined_df, plot)
+
+
