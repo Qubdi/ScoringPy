@@ -43,6 +43,10 @@ By using ScoringPy, you can build robust credit scoring models with ease, reduce
     - [Example](#creditscoring-example)
     - [Parameters](#creditscoring-params)
     - [Explanation](#creditscoring-exp)
+  - [Metrics](#metrics)
+    - [Methods](#metrics-methods)
+      - [Calculate metrics with respect of approvalrate](#)
+    - [Example](#metrics-exp)
   - [Performance Testing and Monitoring](#performance-testing-and-monitoring)
 - [Best Practices and Detailed Explanations](#best-practices-and-detailed-explanations)
   - [Data Preprocessing Pipeline](#data-preprocessing-pipeline)
@@ -452,6 +456,30 @@ scorecard = result.scorecard
 1. **Scorecard Generation**: The `apply_scoring` method generates a scorecard based on the model's coefficients and constants.
 
 2. **Scored Data**: The resulting `df_scored` DataFrame includes the calculated scores for each record.
+
+## <a id='metrics'></a>Metrics
+The Metrics module provides tools for credit scoring analysis and visualization. With features like cutoff calculations, trend analysis, score binning, and detailed reporting, this module is ideal for professionals managing credit risk and decision-making processes.
+
+
+### <a id='metrics-methods'></a>Methods
+
+- **cutoff**: Calculates metrics for a specified approval rate.
+- **cutoff_report**: Generates a report of cutoff metrics across various approval rates.
+- **score_binning**: Bins credit scores and computes statistics for each bin.
+- **approval_rate_trend**: Tracks approval rates over time.
+- **risk_trend_analysis**: Analyzes and visualizes risk trends over time.
+
+Each method supports:
+
+- **plot**: Visualisation of statistics/analytics
+
+
+### <a id='calc-metrics'></a>  Calculate metrics with respect of approvalrate
+
+
+
+### <a id='metrics-exp'></a>Explanation
+
 
 
 ## <a id='performance-testing-and-monitoring'></a>Performance Testing and Monitoring
