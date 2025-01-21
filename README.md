@@ -474,11 +474,31 @@ Each method supports:
 - **plot**: Visualisation of statistics/analytics
 
 
-### <a id='calc-metrics'></a>  Calculate metrics with respect of approvalrate
+### <a id='calc-metrics'></a>Calculate metrics with respect of approvalrate
 
+```python
+from ScoringPy import Metrics
 
+# Initialize the Metrics class
+metrics = Metrics(
+  Credit_score='Scores',
+  Target='Actual',
+  Date_column='Date',
+  Positive_Target=1,
+  Negative_Target=0,
+  Data_path='./',  # Adjust the path as needed
+  Plot_path='./'   # Adjust the path as needed
+)
 
+# Analyze a discrete variable with safety checks
+cutoff_metrics = metrics.cutoff(data, approved_Rate=50, display=True)
+```
 ### <a id='metrics-exp'></a>Explanation
+1. **Initialization**: We initialize `Metrics` with madatory parameters.
+
+2. **Computing the Results for cutoff**: We call the `cutoff` method, passing the dataframe and approved_Rate (display set to `False` by default)
+
+4. **Generating the Report**: We call the `report` method to display the analysis.
 
 
 

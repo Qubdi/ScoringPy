@@ -900,9 +900,9 @@ class Metrics:
 
         if display:
             print(f"""Cutoff Score: {round(cutoff_score, 2)}
-            Good Percentage Among Approved: {good_perc_approved}%
-            Bad Percentage Among Approved: {bad_perc_approved}%
-            Approval Rate: {approve_rate}%""")
+Good Percentage Among Approved: {good_perc_approved}%
+Bad Percentage Among Approved: {bad_perc_approved}%
+Approval Rate: {approve_rate}%""")
 
         return cutoff_score, good_perc_approved, bad_perc_approved, approve_rate, bad_perc_under_cuttof
 
