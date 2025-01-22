@@ -85,6 +85,127 @@ Explanation
 
 6. **Clearing the Pipeline**: We clear the pipeline using ``pipeline.clear()`` if we need to reset it.
 
+
+
+To create and use a processing pipeline, you can follow these approaches based on your requirements.
+
+Type 1: Reusing the Pipeline
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can load the saved pipeline and apply it to new data without redefining the steps:
+
+.. code-block:: python
+
+    import dill
+    import pandas as pd
+
+    # Load the saved pipeline
+    with open('pipeline.pkl', 'rb') as file:
+        pipeline = dill.load(file)
+
+    # Load new data
+    df_new = pd.read_csv('new_data.csv')
+
+    # Run the pipeline on the new data
+    df_processed_new = pipeline.run(initial_data=df_new)
+
+    # Clear the pipeline if needed
+    pipeline.clear()
+
+
+Type 2: Non-Sequential Data Processing with Manual Flow
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you need more control over the data flow between steps, you can set ``flow=False`` when initializing the pipeline.
+
+.. code-block:: python
+
+    from ScoringPy import Processing
+    import pandas as pd
+    import dill
+
+    # Initialize the pipeline without automatic flow
+    pipeline = Processing(flow=False)
+
+    # Define functions for each step
+    def load_data_step1(path=None):
+        """Load data from an Excel file."""
+        data = pd.read_excel(path)
+        return data
+
+    def load_data_step2():
+        """Load additional data from another Excel file."""
+        data = pd.read_excel('Data/step2.xlsx')
+        return data
+
+    def concatenate_data():
+        """Concatenate data from step 1 and step 2."""
+        step1_data = pipeline.context.get('load_data_step1')
+        step2_data = pipeline.context.get('load_data_step2')
+        data = pd.concat([step1_data, step2_data], ignore_index=True)
+        data['Age'] = data['Age'] * 2
+        return data
+
+    def finalize_data(data):
+        """Finalize the data by scaling the 'Age' column."""
+        data['Age'] = data['Age'] / 5
+        return data
+
+    # Add steps to the pipeline
+    pipeline.add_step(load_data_step1, path='Data/step1.xlsx')
+    pipeline.add_step(load_data_step2)
+    pipeline.add_step(concatenate_data, flow=True)
+    pipeline.add_step(finalize_data, flow=True)
+
+    # Save the pipeline
+    with open('pipeline.pkl', 'wb') as file:
+        dill.dump(pipeline, file)
+
+    # Run the pipeline
+    df_processed = pipeline.run()
+
+    # Clear the pipeline if needed
+    pipeline.clear()
+
+Explanation
+~~~~~~~~~~~
+
+1. **Initialization**:
+   - We initialize the ``Processing`` pipeline with ``flow=False``, disabling automatic data flow.
+
+2. **Function Definitions**:
+   - We define functions for loading data and concatenating datasets.
+
+3. **Using ``pipeline.context``**:
+   - We use ``pipeline.context.get()`` to retrieve data from previous steps.
+
+4. **Flow Control**:
+   - We set ``flow=True`` for steps where we want the output to be passed to the next step.
+
+Type 2: Reusing the Pipeline
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can reuse a saved pipeline by loading it and applying it directly to the data:
+
+.. code-block:: python
+
+    import dill
+
+    # Load the pipeline
+    with open('pipeline.pkl', 'rb') as file:
+        pipeline = dill.load(file)
+
+    # Run the pipeline
+    df_processed = pipeline.run()
+
+    # Clear the pipeline if needed
+    pipeline.clear()
+
+Processing Optional Arguments
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**flow** *(bool, default True)*: Controls automatic data flow between steps. If set to ``False``, you must manage the data flow manually.
+
 WoeAnalysis
 -----------
 
@@ -130,6 +251,8 @@ Explanation
 Plotting and Saving Reports
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Generate and save reports while analyzing discrete variables.
+
 .. code-block:: python
 
     # Generate a plot and display the report
@@ -137,6 +260,73 @@ Plotting and Saving Reports
 
     # Save the report
     woe_analysis.discrete(column="MaritalStatus", df=X_train, target=y_train, safety=True, threshold=300).report(save=True, type=1)
+
+- **rotation**: Adjusts the rotation of x-axis labels in the plot.
+- **save**: If True, saves the report.
+- **type**: Specifies the format type when saving.
+
+Analyzing Continuous Variables
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For continuous variables, you need to define bins. You can use **auto** or **manual binning** methods for this purpose.
+
+Auto Binning
+^^^^^^^^^^^^
+
+Automatically define bins for continuous variables and analyze them.
+
+.. code-block:: python
+
+    from ScoringPy import WoeAnalysis
+
+    # Define bins using WoeAnalysis method
+    bins = woe_analysis.auto_binning(column="RefinanceRate", n_bins=10, data=X_train, target=y_train, strategy_option=None)
+
+    # Analyze a continuous variable
+    woe_analysis.continuous(column="RefinanceRate", bins=bins, df=X_train, target=y_train).report()
+
+    # Plot and display the report
+    woe_analysis.continuous(column="RefinanceRate", bins=bins, df=X_train, target=y_train).plot(rotation=90).report()
+
+    # Save the report
+    woe_analysis.continuous(column="RefinanceRate", bins=bins, df=X_train, target=y_train).report(save=True)
+
+Manual Binning
+^^^^^^^^^^^^^^
+
+Define custom bins for continuous variables and analyze them.
+
+.. code-block:: python
+
+    import numpy as np
+    import pandas as pd
+    from ScoringPy import WoeAnalysis
+
+    # Define bins using pandas IntervalIndex
+    bins = pd.IntervalIndex.from_tuples([
+        (-1, 0), (0, 0.2), (0.2, 0.35), (0.35, 0.45), (0.45, 0.55), (0.55, 0.65), (0.65, np.inf)])
+
+    # Analyze a continuous variable
+    woe_analysis.continuous(column="RefinanceRate", bins=bins, df=X_train, target=y_train).report()
+
+    # Plot and display the report
+    woe_analysis.continuous(column="RefinanceRate", bins=bins, df=X_train, target=y_train).plot(rotation=90).report()
+
+    # Save the report
+    woe_analysis.continuous(column="RefinanceRate", bins=bins, df=X_train, target=y_train).report(save=True)
+
+Results
+~~~~~~~
+
+You can extract various attributes from the `woe_analysis` object for future use:
+
+.. code-block:: python
+
+    WoE_dict = woe_analysis.WoE_dict            # Dictionary of WoE values
+    Variable_types = woe_analysis.Variable_types  # Types of variables analyzed
+    Variable_Ranges = woe_analysis.Variable_Ranges  # Ranges or bins used
+    IV_excel = woe_analysis.IV_excel            # IV values formatted for Excel
+    IV_dict = woe_analysis.IV_dict              # Dictionary of IV values
 
 WoeBinning
 ----------
@@ -175,6 +365,15 @@ CreditScoring
 
 The **CreditScoring** module scales scores and probabilities based on your logistic regression model and specific scaling constants. It allows you to generate a scorecard and apply it to your dataset.
 
+Steps
+~~~~~
+
+1. **Train a Logistic Regression Model**: Use the transformed data to train your model.
+
+2. **Initialize CreditScoring**: Provide the data, model, WoE dictionary, and production mode.
+
+3. **Apply Scoring**: Generate the scorecard and apply it to your data.
+
 Example
 ~~~~~~~
 
@@ -203,6 +402,26 @@ Parameters
 ~~~~~~~~~~
 
 - **data**: The dataset to score.
+
 - **model**: The trained logistic regression model.
+
 - **WoE_dict**: The WoE dictionary used for transformations.
-- **production** (``bool``, default ``True``): Controls error handling for outliers during scoring.
+
+- **production** *(bool, default True)*: Controls error handling for outliers during scoring.
+
+  - If `False`: The process will raise an error if it encounters data issues, suitable for development and debugging.
+  - If `True`: It will handle outliers gracefully, making it suitable for production environments.
+
+
+Explanation
+~~~~~~~~~~~~
+
+1. **Scorecard Generation**: The `apply_scoring` method generates a scorecard based on the model's coefficients and constants.
+
+2. **Scored Data**: The resulting `df_scored` DataFrame includes the calculated scores for each record.
+
+
+Performance Testing and Monitoring
+-----------------------------------
+
+By reusing the preprocessing pipeline and WoE transformations, you can ensure consistency in data preparation. This allows for accurate performance comparisons across different data populations, facilitating performance testing and monitoring over time.
