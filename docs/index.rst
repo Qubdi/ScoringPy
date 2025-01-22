@@ -1,4 +1,4 @@
-Timeline Manager Documentation
+ScoringPy
 ==============================
 
 Overview
@@ -17,11 +17,4 @@ Features
 - **Performance Testing**: Easily test the scorecard's performance on different data populations using the preprocessing pipelines.
 - **Monitoring**: Track scorecard and population performance over time, leveraging the consistent preprocessing steps provided by the pipelines.
 
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-   Installation
-   Usage
 
