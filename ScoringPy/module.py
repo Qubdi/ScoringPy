@@ -900,14 +900,14 @@ class Metrics:
 
         if display:
             print(f"""Cutoff Score: {round(cutoff_score, 2)}
-            Good Percentage Among Approved: {good_perc_approved}%
-            Bad Percentage Among Approved: {bad_perc_approved}%
-            Approval Rate: {approve_rate}%""")
+Good Percentage Among Approved: {good_perc_approved}%
+Bad Percentage Among Approved: {bad_perc_approved}%
+Approval Rate: {approve_rate}%""")
 
         return cutoff_score, good_perc_approved, bad_perc_approved, approve_rate, bad_perc_under_cuttof
 
 
-    def Lineplot(self, data, X_value, Y_values, Y_labels, save=False, X_rotation=90, Y_rotation=0, Grid=True, Title=None, figsize=(10, 4), fontsize=12, show=False):
+    def _Lineplot(self, data, X_value, Y_values, Y_labels, save=False, X_rotation=90, Y_rotation=0, Grid=True, Title=None, figsize=(10, 4), fontsize=12, show=False):
         """
         Creates a line plot for the given data.
 
@@ -1020,7 +1020,7 @@ class Metrics:
             if save and not self.Plot_path:
                 raise ValueError("Plot path is not set. Please specify `plot_path` to save the plot.")
 
-            self.Lineplot(
+            self._Lineplot(
                 data=results_df,
                 X_value='Bad Percentage',
                 Y_values=['Approval Rate'],
@@ -1035,7 +1035,7 @@ class Metrics:
         return _MetricsResult(results_df, plot)
 
 
-    def Score_Binning(self, data, bins=20, binning_type=1, title='Scores Binning', save=False):
+    def score_binning(self, data, bins=20, binning_type=1, title='Scores Binning', save=False):
         """
         Bins the credit scores and generates summary statistics for each bin.
 
@@ -1101,7 +1101,7 @@ class Metrics:
             if save and not self.Plot_path:
                 raise ValueError("Plot path is not set. Please specify `plot_path` to save the plot.")
 
-            self.Lineplot(
+            self._Lineplot(
                 data=grouped,
                 X_value='RowNumber',
                 Y_values=['Bad Rate'],
@@ -1197,7 +1197,7 @@ class Metrics:
             if save and not self.Plot_path:
                 raise ValueError("Plot path is not set. Please specify `plot_path` to save the plot.")
 
-            self.Lineplot(
+            self._Lineplot(
                 data=combined_df,
                 X_value='Period',
                 Y_values=['Approval Rate (%)'],
@@ -1297,7 +1297,7 @@ class Metrics:
             if save and not self.Plot_path:
                 raise ValueError("Plot path is not set. Please specify `plot_path` to save the plot.")
 
-            self.Lineplot(
+            self._Lineplot(
                 data=combined_df,
                 X_value='Period',
                 Y_values=['Above Cutoff Risk (%)', 'Below Cutoff Risk (%)', 'Total Risk (%)'],
