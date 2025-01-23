@@ -50,7 +50,6 @@ By using ScoringPy, you can build robust credit scoring models with ease, reduce
       - [Summary Statistics for binned scores](#bin-metrics)
       - [Approval rate trends over time](#appr-metrics)
       - [Risk trends over time](#risk-metrics)
-    - [Example](#metrics-exp)
   - [Performance Testing and Monitoring](#performance-testing-and-monitoring)
 - [Best Practices and Detailed Explanations](#best-practices-and-detailed-explanations)
   - [Data Preprocessing Pipeline](#data-preprocessing-pipeline)
