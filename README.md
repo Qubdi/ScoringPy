@@ -45,7 +45,11 @@ By using ScoringPy, you can build robust credit scoring models with ease, reduce
     - [Explanation](#creditscoring-exp)
   - [Metrics](#metrics)
     - [Methods](#metrics-methods)
-      - [Calculate metrics with respect of approvalrate](#)
+      - [Calculate metrics with respect of approval rate](#calc-metrics)
+      - [Generate a report showing cutoff metrics across approval rates](#gen-metrics)
+      - [Summary Statistics for binned scores](#bin-metrics)
+      - [Approval rate trends over time](#appr-metrics)
+      - [Risk trends over time](#risk-metrics)
     - [Example](#metrics-exp)
   - [Performance Testing and Monitoring](#performance-testing-and-monitoring)
 - [Best Practices and Detailed Explanations](#best-practices-and-detailed-explanations)
@@ -474,7 +478,7 @@ Each method supports:
 - **plot**: Visualisation of statistics/analytics
 
 
-### <a id='calc-metrics'></a>Calculate metrics with respect of approvalrate
+### <a id='calc-metrics'></a>Calculate metrics with respect of approval rate
 
 ```python
 from ScoringPy import Metrics
@@ -490,17 +494,102 @@ metrics = Metrics(
   Plot_path='./'   # Adjust the path as needed
 )
 
-# Analyze a discrete variable with safety checks
+# Count cutoff and display the resutls
 cutoff_metrics = metrics.cutoff(data, approved_Rate=50, display=True)
 ```
 ### <a id='metrics-exp'></a>Explanation
-1. **Initialization**: We initialize `Metrics` with madatory parameters.
-
+1. **Initialization**: We initialize `Metrics` with mandatory parameters.
 2. **Computing the Results for cutoff**: We call the `cutoff` method, passing the dataframe and approved_Rate (display set to `False` by default)
 
-4. **Generating the Report**: We call the `report` method to display the analysis.
+### <a id='gen-metrics'></a>Calculate and show cutoff metrics across approval rates.
+```python
+from ScoringPy import Metrics
 
+# Initialize the Metrics class
+metrics = Metrics(
+  Credit_score='Scores',
+  Target='Actual',
+  Date_column='Date',
+  Positive_Target=1,
+  Negative_Target=0,
+  Data_path='./',  # Adjust the path as needed
+  Plot_path='./'   # Adjust the path as needed
+)
 
+# Generate the cutoff report and display
+cutoff_report = metrics.cutoff_report(data, step=10, save=False)
+
+```
+### <a id='metrics-exp-cutoff'></a>Explanation
+1. **Generating the Cutoff Report**: We call the cutoff_report method to calculate metrics like approval rate, default rate, TPR, and FPR across different thresholds. It provides a DataFrame and visual plots for analysis.
+2. **Visualizing Metrics**: The plot method visualizes key metrics for easier interpretation and decision-making.
+
+### <a id='bin-metrics'></a>Summary Statistics for binned scores
+```python
+from ScoringPy import Metrics
+
+# Initialize the Metrics class
+metrics = Metrics(
+  Credit_score='Scores',
+  Target='Actual',
+  Date_column='Date',
+  Positive_Target=1,
+  Negative_Target=0,
+  Data_path='./',  # Adjust the path as needed
+  Plot_path='./'   # Adjust the path as needed
+)
+
+# Perform score binning and display
+binning_result = metrics.score_binning(data, bins=10, binning_type=1, save=False)
+```
+### <a id='metrics-exp-cutoff'></a>Explanation
+1. **Performing Score Binning**: The score_binning method bins the credit scores into groups and calculates summary statistics for each bin.
+2. **Summary Statistics**: The method calculates: Number of samples in each bin,Number of bad (negative target) and good (positive target) samples,Percentage of bad/good samples in each bin.
+3. **Visualizing Binned Metrics**: The method generates a line plot showing the bad rate across score bins, aiding in evaluating score distribution and risk segmentation.
+
+### <a id='appr-metrics'></a>Approval rate trends over time
+```python
+from ScoringPy import Metrics
+
+# Initialize the Metrics class
+metrics = Metrics(
+  Credit_score='Scores',
+  Target='Actual',
+  Date_column='Date',
+  Positive_Target=1,
+  Negative_Target=0,
+  Data_path='./',  # Adjust the path as needed
+  Plot_path='./'   # Adjust the path as needed
+)
+
+# Analyze approval rate trends over time (weekly period)
+approval_rate_trend = metrics.approval_rate_trend(data, period='W', score_cutoff=500, save=False)
+```
+### <a id='metrics-exp-cutoff'></a>Explanation
+1. **Calculating Approval Rate Trends**: The `approval_rate_trend` method calculates approval rate trends over time and dispays summary statistics for certain time period.
+2. **Visualizing Approval Trends** : The method generates a line plot showing the approval rate over time. This helps track performance trends and adjust policies or strategies.
+
+### <a id='risk-metrics'></a>Risk trends over time
+```python
+from ScoringPy import Metrics
+
+# Initialize the Metrics class
+metrics = Metrics(
+  Credit_score='Scores',
+  Target='Actual',
+  Date_column='Date',
+  Positive_Target=1,
+  Negative_Target=0,
+  Data_path='./',  # Adjust the path as needed
+  Plot_path='./'   # Adjust the path as needed
+)
+
+# Perform risk trend analysis
+risk_trend = metrics.risk_trend_analysis(data, period='W', score_cutoff=500, save=False)
+```
+### <a id='metrics-exp-cutoff'></a>Explanation
+1. **Risk Trend Analysis**: The `risk_trend_analysis` method calculates and visualizes risk (negative target rate) trends over time and displays summary statistics for certain periods.
+2. **Visualizing Risk Trends**: The method generates a line plot for total risk, risk for applications above the cutoff, risk for applications below the cutoff. This helps monitor trends over time and assess the effectiveness of the cutoff strategy.
 
 ## <a id='performance-testing-and-monitoring'></a>Performance Testing and Monitoring
 
