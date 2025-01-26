@@ -11,6 +11,7 @@ The library is divided into three main components:
 3. **Scorecard Deployment and Scaling**: Deploy and scale scorecards with customizable parameters, allowing for precise control over model coefficients and constants.
 
 By using ScoringPy, you can build robust credit scoring models with ease, reduce error rates, and enhance efficiency throughout the credit scoring process.
+
 Features
 --------
 
