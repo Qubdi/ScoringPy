@@ -22,7 +22,7 @@ setup(
         # Example: 'requests', 'numpy', etc.
     ],
     project_urls={
-        'Documentation': 'https://timeline-manager.readthedocs.io/en/latest/index.html',
+        'Documentation': 'https://scoringpy.readthedocs.io/en/latest',
         'HomePage': 'https://github.com/Qubdi/ScoringPy',
         'Tracker': 'https://github.com/Qubdi/ScoringPy/issues',
     },
