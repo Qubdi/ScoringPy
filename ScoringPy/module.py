@@ -4,10 +4,12 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
+import logging
 import math
 import os
 from sklearn.preprocessing import KBinsDiscretizer
 
+logging.basicConfig(format="%(message)s", level=logging.WARNING)
 
 
 class Processing:
@@ -37,6 +39,41 @@ class Processing:
         # If flow is not specified, use the default flow behavior of the pipeline
         flow = flow if flow is not None else self.default_flow
         self.steps.append((func, args, kwargs, flow))
+
+    def update_paths(self, arg_index: int, new_value, step_index: list = None):
+        """
+        Updates an argument in specific or in all steps of the stored pipeline steps.
+
+        Args:
+            arg_index (int): Index of the argument to update (for positional args).
+            new_value: New value to set for the argument.
+            step_index (list, optional): List of specific step indices to update. If None, update all steps.
+        """
+        updated_steps = []
+        unapplied_steps = []
+
+        for idx, step in enumerate(self.steps):
+            func, args, kwargs, flow = step
+            args_list = list(args)
+
+            if step_index is None or idx in step_index:
+                if arg_index < len(args_list):
+                    args_list[arg_index] = new_value
+                else:
+                    unapplied_steps.append(idx)
+
+            args = tuple(args_list)
+            updated_steps.append((func, args, kwargs, flow))
+
+        step_label = "step" if len(unapplied_steps) == 1 else "steps"
+
+        steps_str = ", ".join(map(str, unapplied_steps))
+
+        logging.warning(
+            f"\033[93m⚠️ WARNING: Position {arg_index} is out of range for available {step_label}: {steps_str}. Unable to update.\033[0m"
+        )
+        self.steps = updated_steps
+
 
     def run(self, initial_data=None):
         """
