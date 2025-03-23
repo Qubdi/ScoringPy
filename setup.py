@@ -20,6 +20,9 @@ setup(
     install_requires=[
         # List your package dependencies here
         # Example: 'requests', 'numpy', etc.
+        'numpy',
+        'pandas',
+        'scikit-learn',
     ],
     project_urls={
         'Documentation': 'https://scoringpy.readthedocs.io/en/latest',
