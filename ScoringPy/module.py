@@ -7,6 +7,7 @@ import numpy as np
 import logging
 import math
 import os
+from typing import  final
 from sklearn.preprocessing import KBinsDiscretizer
 
 logging.basicConfig(format="%(message)s", level=logging.WARNING)
@@ -430,7 +431,7 @@ class WoeAnalysis:
                 self._parent = parent
                 self._df_temp = df_temp
 
-            def plot(self, rotation=0):
+            def plot_data(self, rotation=0):
                 """Plot the WoE values for the discrete variable."""
                 self._parent._plot_woe(self._df_temp, rotation=rotation)
                 return self
@@ -439,7 +440,16 @@ class WoeAnalysis:
                 """Return the DataFrame when called."""
                 if save:
                     self._parent._save_file(path=path, name=name, format=file_format, type=type, column=column, df1=self._df_temp, df2=df_temp2)
-                return self._df_temp
+
+                class _CheckChain(pd.DataFrame):
+                    def __getattr__(self, item):
+                        if item == "plot_data":
+                            raise AttributeError("You cannot chain `.plot_data()` after `.report()`. "
+                                                 "Call `.plot_data()` before `.report()`.")
+                        return super().__getattribute__(item)
+
+                return _CheckChain(self._df_temp)
+                # return self._df_temp
 
         # Return only the DiscretePlotter object
         return DiscretePlotter(self, df_temp)
@@ -505,7 +515,7 @@ class WoeAnalysis:
                 self._parent = parent
                 self._df_temp = df_temp
 
-            def plot(self, rotation=0):
+            def plot_data(self, rotation=0):
                 """Plot the WoE values for the discrete variable."""
                 self._parent._plot_woe(self._df_temp, rotation=rotation)
                 return self
@@ -514,7 +524,16 @@ class WoeAnalysis:
                 """Return the DataFrame when called."""
                 if save:
                     self._parent._save_file(path=path, name=name, format=file_format, type=type, column=column, df1=self._df_temp, df2=df_temp2)
-                return self._df_temp
+
+                class _CheckChain(pd.DataFrame):
+
+                    def __getattr__(self, item):
+                        if item == "plot_data":
+                            raise AttributeError("You cannot chain `.plot_data()` after `.report()`. "
+                                                 "Call `.plot_data()` before `.report()`.")
+                        return super().__getattribute__(item)
+
+                return _CheckChain(self._df_temp)
 
         # Return only the DiscretePlotter object
         return DiscretePlotter(self, df_temp)
