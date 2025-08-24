@@ -23,6 +23,8 @@ setup(
         'numpy',
         'pandas',
         'scikit-learn',
+        'matplotlib',
+        'seaborn',
     ],
     project_urls={
         'Documentation': 'https://scoringpy.readthedocs.io/en/latest',
