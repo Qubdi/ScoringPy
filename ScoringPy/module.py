@@ -606,7 +606,7 @@ class WoeAnalysis:
 
         # Perform WoE analysis on best result and plot it
         analysis_result = self.continuous(column=column, bins=best_result[0], df=data, target=target)
-        analysis_result.plot()  # Customize plot (assumes plot() method exists in the result)
+        analysis_result.plot_data()  # Customize plot (assumes plot() method exists in the result)
 
         # Return the best bin intervals as a list of tuples (lower_bound, upper_bound)
         return best_result[0]
