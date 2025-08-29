@@ -9,7 +9,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="ScoringPy",  # The name of your package
-    version="1.1.3",  # The version of your package
+    version="1.1.4",  # The version of your package
     author="Anri Tvalabeishvili, Kristine Dzneladze, Akaki Benidze",  # Your name or organization
     author_email="QubdiSolutions@gmail.com",  # Your contact email
     description="ScoringPy is an open-source Python library designed to streamline the development and deployment of classical credit scorecards.",  # A short description of your package

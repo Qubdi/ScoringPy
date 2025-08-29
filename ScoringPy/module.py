@@ -601,15 +601,19 @@ class WoeAnalysis:
                 else:
                     break  # Stop if IV is outside the acceptable range
 
-        # Retrieve the best binning result based on highest IV
-        best_result = all_IV[str(best_IV)]
+        try:
+            # Retrieve the best binning result based on highest IV
+            best_result = all_IV[str(best_IV)]
 
-        # Perform WoE analysis on best result and plot it
-        analysis_result = self.continuous(column=column, bins=best_result[0], df=data, target=target)
-        analysis_result.plot_data()  # Customize plot (assumes plot() method exists in the result)
+            # Perform WoE analysis on best result and plot it
+            analysis_result = self.continuous(column=column, bins=best_result[0], df=data, target=target)
+            analysis_result.plot_data()  # Customize plot (assumes plot() method exists in the result)
 
-        # Return the best bin intervals as a list of tuples (lower_bound, upper_bound)
-        return best_result[0]
+            # Return the best bin intervals as a list of tuples (lower_bound, upper_bound)
+            return best_result[0]
+        except:
+            print("Could not auto-binning.")
+            return None
 
 
 class WoeBinning:
