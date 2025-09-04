@@ -469,6 +469,8 @@ class WoeAnalysis:
         """
 
         df_temp = df.copy()
+        if type(bins) is list:
+            bins = pd.IntervalIndex.from_tuples(bins)
 
         # creating a new factorized column based on binning the specified feature
         df_temp[f'{column}_factor'] = pd.cut(df_temp[column], bins)
@@ -604,13 +606,14 @@ class WoeAnalysis:
         try:
             # Retrieve the best binning result based on highest IV
             best_result = all_IV[str(best_IV)]
+            best_result = [(float(item.left), float(item.right)) for item in best_result[0]]
 
             # Perform WoE analysis on best result and plot it
-            analysis_result = self.continuous(column=column, bins=best_result[0], df=data, target=target)
+            analysis_result = self.continuous(column=column, bins=best_result, df=data, target=target)
             analysis_result.plot_data()  # Customize plot (assumes plot() method exists in the result)
 
             # Return the best bin intervals as a list of tuples (lower_bound, upper_bound)
-            return best_result[0]
+            return best_result
         except:
             print("Could not auto-binning.")
             return None
