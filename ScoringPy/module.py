@@ -469,6 +469,8 @@ class WoeAnalysis:
         """
 
         df_temp = df.copy()
+        if type(bins) is list:
+            bins = pd.IntervalIndex.from_tuples(bins)
 
         # creating a new factorized column based on binning the specified feature
         df_temp[f'{column}_factor'] = pd.cut(df_temp[column], bins)
@@ -539,7 +541,7 @@ class WoeAnalysis:
         return DiscretePlotter(self, df_temp)
 
 
-    def auto_binning(self, data, column, n_bins=None, target=None, strategy_option=None):
+    def auto_binning(self, data, column, n_bins=None, target=None, strategy_option=None, extend_min_bin=False):
         """
         Automatically bins continuous data using different strategies and performs WoE analysis.
 
@@ -548,73 +550,70 @@ class WoeAnalysis:
         - column (str): The name of the column to bin.
         - n_bins (int, optional): Number of bins to create (if not provided, a range of bins is tried).
         - target (pd.Series, optional): Target variable for WoE analysis.
-        - strategy_option (str, optional): "quantile" for quantile binning, or choose from "uniform", "quantile", or "kmeans" strategies.
+        - strategy_option (str, optional): "quantile" for quantile binning, or choose from "uniform", "quantile".
+        - extend_min_bin (bool|float, optional): If numeric (e.g., 10), AFTER selecting the best bins,
+          subtract this value from the first bin's lower bound. If False, no change.
 
         Returns:
-        - best_result[1] (list of tuples): The best bin intervals as a list of (lower_bound, upper_bound) tuples.
+        - best_result (list[tuple]): Best bin intervals as [(lower_bound, upper_bound), ...]
         """
 
-        # List of possible binning strategies
         strategies = ["uniform", "quantile"]
-        # Range of bin counts to test if n_bins is not specified
         all_n_bins = range(2, 30)
-        # Variable to track the best Information Value (IV) obtained
-        best_IV = 0
+        best_IV = 0.0
 
-        # Adjust strategy list if a specific strategy is specified
         if strategy_option:
             strategies = [strategy_option]
 
-        # If specific number of bins is provided, overwrite the range of bins
         if n_bins:
             all_n_bins = [n_bins]
 
-        # Dictionary to store IV results for each strategy and bin combination
-        all_IV = {}
+        all_IV = {}  # IV(float) -> [IntervalIndex bins, list-of-tuples bins, strategy, n_bins]
 
-        # Iterate through each strategy and bin count
         for strategy in strategies:
             for n_bins in all_n_bins:
-                # Initialize KBinsDiscretizer for binning
                 kb = KBinsDiscretizer(n_bins=n_bins, encode='ordinal', strategy=strategy)
-
-                # Fit and transform the data, binning the specified column
                 kb.fit_transform(data[[column]])
-                bin_edges = kb.bin_edges_[0]  # Get bin edges for the column
-                bins = pd.IntervalIndex.from_breaks(bin_edges)  # Convert edges to intervals
+                bin_edges = kb.bin_edges_[0]
 
-                # Convert bin edges into a list of tuples (lower_bound, upper_bound)
+                bins_interval = pd.IntervalIndex.from_breaks(bin_edges)
                 bins_as_tuples = [(bin_edges[i], bin_edges[i + 1]) for i in range(len(bin_edges) - 1)]
 
-                # Perform WoE analysis and retrieve IV
-                analysis_result = self.continuous(column=column, bins=bins, df=data, target=target)
-                information_value = analysis_result.report()["IV"][0]  # Extract IV value
+                analysis_result = self.continuous(column=column, bins=bins_interval, df=data, target=target)
+                information_value = float(analysis_result.report()["IV"][0])
 
-                # Check IV is within acceptable bounds (0 <= IV <= 1.5)
                 if 0 <= information_value <= 1.5:
-                    # Store IV, bins, strategy, and bin count in all_IV dictionary
-                    all_IV[str(information_value)] = [bins, bins_as_tuples, strategy, n_bins]
-
-                    # Update best IV and corresponding bins if this IV is higher
+                    all_IV[information_value] = [bins_interval, bins_as_tuples, strategy, n_bins]
                     if best_IV < information_value:
                         best_IV = information_value
                 else:
-                    break  # Stop if IV is outside the acceptable range
+                    break
 
         try:
-            # Retrieve the best binning result based on highest IV
-            best_result = all_IV[str(best_IV)]
+            # Retrieve best bins WITHOUT any extension (so selection is unbiased)
+            best_bins_interval, best_bins_tuples, _, _ = all_IV[best_IV]
 
-            # Perform WoE analysis on best result and plot it
-            analysis_result = self.continuous(column=column, bins=best_result[0], df=data, target=target)
-            analysis_result.plot_data()  # Customize plot (assumes plot() method exists in the result)
+            # Convert to list of tuples for downstream use
+            best_result = [(float(iv.left), float(iv.right)) for iv in best_bins_interval]
 
-            # Return the best bin intervals as a list of tuples (lower_bound, upper_bound)
-            return best_result[0]
-        except:
-            print("Could not auto-binning.")
+            # Apply extension ONLY NOW, after best bins are selected
+            if extend_min_bin and isinstance(extend_min_bin, (int, float)):
+                new_lower = best_result[0][0] - float(extend_min_bin)
+                # Optional safety: ensure the extended lower doesn't exceed the first upper
+                if new_lower < best_result[0][1]:
+                    best_result[0] = (new_lower, best_result[0][1])
+                # else: if user passed a huge value making lower >= upper, keep as-is silently
+                # or you could raise/log a warning if you prefer
+
+            # Run final WoE analysis and plot with the (possibly) extended bins
+            analysis_result = self.continuous(column=column, bins=best_result, df=data, target=target)
+            analysis_result.plot_data()
+
+            return best_result
+
+        except Exception as e:
+            print("Could not auto-binning.", e)
             return None
-
 
 class WoeBinning:
     """
